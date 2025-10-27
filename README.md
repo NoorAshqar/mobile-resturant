@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Mobile Restaurant Menu — Full Stack Setup
 
-## Getting Started
+This repo now contains:
 
-First, run the development server:
+- A Next.js 16 front end (project root).
+- A standalone Express API in `server/` that handles authentication and dashboard data backed by MongoDB.
+
+## Prerequisites
+
+- Node.js 18+
+- A MongoDB cluster (local or hosted)
+
+## Environment Variables
+
+### Front end (`.env.local`)
+
+```
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+```
+
+Update this to the deployed API URL when hosting the project.
+
+### API server (`server/.env`)
+
+```
+PORT=4000
+CLIENT_URL=http://localhost:3000
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>?retryWrites=true&w=majority
+JWT_SECRET=replace-with-a-long-random-string
+```
+
+Adjust the values for your environment prior to running the API.
+
+## Installation
+
+Install dependencies for both the front end and the API:
+
+```bash
+# Front end
+npm install
+
+# API server
+cd server
+npm install
+```
+
+## Running Locally
+
+Run each project in its own terminal session.
+
+Front end:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+API server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd server
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000) for the customer experience. The floating “Admin login” button links to the admin portal.
 
-## Learn More
+## Creating an Admin Account
 
-To learn more about Next.js, take a look at the following resources:
+Visit [http://localhost:3000/admin/signup](http://localhost:3000/admin/signup) to create the first admin user and then sign in at `/admin`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Prefer to seed via the shell?
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```js
+db.admins.insertOne({
+  email: "admin@example.com",
+  password: "$2a$12$eR0uQTP3P8QHzTyZ1BWzuOKbYKT5iDJrpVlzDqgW8sELpAo0P5uQ2" // hashed "password123"
+});
+```
 
-## Deploy on Vercel
+> Replace the hash if you prefer a different password. Generate bcrypt hashes with `bcryptjs` or any compatible utility.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Populating Restaurants
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The admin dashboard reads from the `restaurants` collection. Example seed:
+
+```js
+db.restaurants.insertMany([
+  {
+    name: "The Burger Palace",
+    cuisine: "American - Burgers",
+    status: "active",
+    todayOrders: 127,
+    todayRevenue: 2845,
+    totalMenuItems: 24,
+    rating: 4.6,
+    trend: "up",
+    trendPercentage: 12,
+  },
+]);
+```
+
+Add as many documents as you like—the dashboard aggregates totals automatically.
+
+## Admin Workflow
+
+1. Visit `/admin` and sign in.
+2. Successful login sets an HTTP-only cookie and redirects to `/admin/dashboard`.
+3. Use the “Sign out” button to end the session.
+
+## API Endpoints (Express server)
+
+| Method | Route               | Description                          | Auth |
+| ------ | ------------------- | ------------------------------------ | ---- |
+| POST   | `/api/auth/signup`  | Create a new admin account           | No   |
+| POST   | `/api/auth/login`   | Authenticate admin & set session     | No   |
+| POST   | `/api/auth/logout`  | Destroy admin session                | Yes  |
+| GET    | `/api/dashboard`    | Protected restaurant dashboard data  | Yes  |
+
+Protected routes require the `admin-token` cookie issued during login.
+
+## Deployment Notes
+
+- Deploy the front end and API separately (e.g. Vercel + Render/Fly/Heroku).
+- Point `NEXT_PUBLIC_API_BASE_URL` at the live API URL.
+- Provide MongoDB and JWT environment variables to the API server.
+
+## Further Reading
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Express Documentation](https://expressjs.com/)
+
+Leverage the broader Next.js + Express ecosystem for additional patterns and tooling.
