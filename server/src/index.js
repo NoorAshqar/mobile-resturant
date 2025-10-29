@@ -7,6 +7,8 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
+const menuRoutes = require("./routes/menu");
+const restaurantRoutes = require("./routes/restaurant");
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/menu", menuRoutes);
+app.use("/api/restaurant", restaurantRoutes);
 
 const PORT = process.env.PORT || 4000;
 

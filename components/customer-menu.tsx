@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { MapPin, Search, Star } from "lucide-react";
+import { MapPin, Search, Star, Clock, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
+import { colors } from "@/config/colors";
 import { Cart } from "./cart";
 import { MenuItem, type MenuItemType } from "./menu-item";
 import { Badge } from "./ui/badge";
@@ -93,57 +94,93 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white shadow-sm">
-        <div className="mx-auto max-w-2xl px-4 py-4">
-          <div className="mb-3 flex items-center gap-2 text-sm text-gray-600">
-            <MapPin className="h-4 w-4" />
-            <span>Delivering to Home</span>
+    <div className="min-h-screen pb-24" style={{ backgroundColor: colors.background.secondary }}>
+      {/* Restaurant Header */}
+      <div 
+        className="shadow-md border-b-2"
+        style={{ 
+          backgroundColor: colors.background.primary,
+          borderColor: colors.border.light 
+        }}
+      >
+        <div className="mx-auto max-w-3xl px-4 py-6">
+          <div className="mb-4 flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+            <MapPin className="h-5 w-5" style={{ color: colors.primary[600] }} />
+            <span className="font-semibold">Delivering to Home</span>
           </div>
 
-          <h1 className="mb-1">{restaurant.name}</h1>
-          <p className="mb-2 text-sm text-gray-600">{restaurant.cuisine}</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: colors.text.primary }}>
+            {restaurant.name}
+          </h1>
+          <p className="text-base mb-4" style={{ color: colors.text.secondary }}>
+            {restaurant.cuisine}
+          </p>
 
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span>{restaurant.rating.toFixed(1)}</span>
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div 
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg"
+                style={{ backgroundColor: colors.warning[50] }}
+              >
+                <Star className="h-5 w-5" style={{ color: colors.warning[500], fill: colors.warning[500] }} />
+                <span className="font-bold" style={{ color: colors.text.primary }}>
+                  {restaurant.rating.toFixed(1)}
+                </span>
+              </div>
             </div>
-            <span className="text-gray-400">|</span>
-            <span>{restaurant.deliveryTime}</span>
-            <span className="text-gray-400">|</span>
-            <span>${restaurant.deliveryFee.toFixed(2)} delivery</span>
+            
+            <div className="flex items-center gap-2" style={{ color: colors.text.secondary }}>
+              <Clock className="h-5 w-5" style={{ color: colors.secondary[600] }} />
+              <span className="font-semibold">{restaurant.deliveryTime}</span>
+            </div>
+            
+            <div className="flex items-center gap-2" style={{ color: colors.text.secondary }}>
+              <DollarSign className="h-5 w-5" style={{ color: colors.success[600] }} />
+              <span className="font-semibold">${restaurant.deliveryFee.toFixed(2)} delivery</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-4">
+      {/* Search Bar */}
+      <div className="mx-auto max-w-3xl px-4 py-6">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <Search 
+            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" 
+            style={{ color: colors.text.tertiary }} 
+          />
           <Input
             type="text"
-            placeholder="Search menu..."
+            placeholder="Search menu items..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="pl-10"
+            className="pl-12 h-12 text-base border-2 shadow-sm"
+            style={{ 
+              borderColor: colors.border.DEFAULT,
+              backgroundColor: colors.background.primary 
+            }}
           />
         </div>
       </div>
 
-      <div className="mx-auto mb-4 max-w-2xl px-4">
+      {/* Category Filters */}
+      <div className="mx-auto mb-6 max-w-3xl px-4">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {categories.map((category) => {
             const isActive = selectedCategory === category;
             return (
               <Badge
                 key={category}
-                variant={isActive ? "default" : "outline"}
-                className={`cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "hover:bg-gray-100"
+                className={`cursor-pointer whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all hover:shadow-md ${
+                  isActive ? "shadow-md" : ""
                 }`}
                 onClick={() => setSelectedCategory(category)}
+                style={{
+                  backgroundColor: isActive ? colors.primary[600] : colors.background.primary,
+                  color: isActive ? colors.text.inverse : colors.text.primary,
+                  borderColor: isActive ? colors.primary[600] : colors.border.DEFAULT,
+                  border: '2px solid'
+                }}
               >
                 {category}
               </Badge>
@@ -152,7 +189,8 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-3 px-4">
+      {/* Menu Items */}
+      <div className="mx-auto max-w-3xl space-y-4 px-4 pb-8">
         {filteredItems.map((item) => (
           <MenuItem
             key={item.id}
@@ -164,7 +202,26 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
         ))}
 
         {filteredItems.length === 0 ? (
-          <div className="py-12 text-center text-gray-500">No items found</div>
+          <div 
+            className="py-16 text-center rounded-xl border-2"
+            style={{ 
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light 
+            }}
+          >
+            <div 
+              className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full"
+              style={{ backgroundColor: colors.neutral[100] }}
+            >
+              <Search className="h-10 w-10" style={{ color: colors.text.tertiary }} />
+            </div>
+            <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+              No items found
+            </p>
+            <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+              Try a different search or category
+            </p>
+          </div>
         ) : null}
       </div>
 

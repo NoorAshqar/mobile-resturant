@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { RestaurantDashboard } from "@/components/restaurant-dashboard";
-import { SignOutButton } from "@/components/sign-out-button";
+import { colors } from "@/config/colors";
+import { CreateRestaurantForm } from "@/components/create-restaurant-form";
 import type { RestaurantData } from "@/components/restaurant-card";
+import { RestaurantDashboard } from "@/components/restaurant-dashboard";
 
 const API_BASE_URL =
   process.env.API_BASE_URL ??
@@ -28,7 +29,7 @@ async function fetchDashboard(cookieHeader: string) {
     throw new Error("Failed to load dashboard data.");
   }
 
-  return (await response.json()) as { restaurants: RestaurantData[] };
+  return (await response.json()) as { restaurant: RestaurantData | null };
 }
 
 export default async function AdminDashboardPage() {
@@ -46,20 +47,13 @@ export default async function AdminDashboardPage() {
 
   const data = await fetchDashboard(cookieHeader);
 
-  return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <div className="sticky top-0 z-40 border-b bg-white shadow-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-          <div>
-            <h1 className="text-lg font-semibold">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              Overview of restaurants and performance metrics.
-            </p>
-          </div>
-          <SignOutButton />
-        </div>
+  if (!data.restaurant) {
+    return (
+      <div className="flex items-center justify-center p-6" style={{ backgroundColor: colors.background.secondary }}>
+        <CreateRestaurantForm />
       </div>
-      <RestaurantDashboard restaurants={data.restaurants} />
-    </div>
-  );
+    );
+  }
+
+  return <RestaurantDashboard restaurants={[data.restaurant]} />;
 }

@@ -1,29 +1,48 @@
 import Link from "next/link";
+import { ArrowLeft, UserPlus } from "lucide-react";
 
+import { colors } from "@/config/colors";
 import { AdminSignupForm } from "@/components/admin-signup-form";
-import { Toaster } from "@/components/ui/sonner";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminSignupPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <Toaster />
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <div className="mb-6 space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Create Admin Account
-          </h1>
-          <p className="text-sm text-gray-600">
-            Set up your admin credentials to manage restaurants.
-          </p>
-        </div>
-        <AdminSignupForm />
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link href="/admin" className="font-medium text-green-600">
-            Sign in
-          </Link>
-          .
-        </p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: colors.background.secondary }}>
+      <div className="w-full max-w-md">
+        <Card className="border-2 shadow-2xl" style={{ backgroundColor: colors.background.primary, borderColor: colors.border.light }}>
+          <CardHeader className="text-center space-y-4">
+            <div 
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full shadow-lg"
+              style={{ backgroundColor: colors.secondary[600] }}
+            >
+              <UserPlus className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-3xl font-bold" style={{ color: colors.text.primary }}>
+                Create Admin Account
+              </CardTitle>
+              <CardDescription className="text-base mt-2" style={{ color: colors.text.secondary }}>
+                Get started by creating your admin account
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <AdminSignupForm />
+            <div className="mt-6 text-center">
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                Already have an account?{" "}
+                <Link 
+                  href="/admin" 
+                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all"
+                  style={{ color: colors.primary[600] }}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Sign in instead
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

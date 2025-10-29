@@ -1,16 +1,10 @@
 'use client';
 
-import {
-  DollarSign,
-  ShoppingBag,
-  Star,
-  TrendingDown,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { Star, TrendingUp, TrendingDown } from "lucide-react";
 
-import { Badge } from "./ui/badge";
+import { colors } from "@/config/colors";
 import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
 
 export interface RestaurantData {
   id: string;
@@ -31,71 +25,87 @@ interface RestaurantCardProps {
 }
 
 export function RestaurantCard({ restaurant, onClick }: RestaurantCardProps) {
-  const trendIcon =
-    restaurant.trend === "up" ? (
-      <TrendingUp className="h-4 w-4" />
-    ) : (
-      <TrendingDown className="h-4 w-4" />
-    );
-
-  const trendColour =
-    restaurant.trend === "up" ? "text-green-600" : "text-red-600";
-
   return (
-    <Card
-      className="cursor-pointer p-4 transition-shadow hover:shadow-md"
+    <Card 
+      className="p-6 cursor-pointer transition-all hover:shadow-xl border-2" 
       onClick={onClick}
+      style={{ 
+        backgroundColor: colors.background.primary,
+        borderColor: colors.border.light 
+      }}
     >
-      <div className="mb-3 flex items-start justify-between">
-        <div className="flex-1">
-          <h3 className="mb-1">{restaurant.name}</h3>
-          <p className="text-sm text-gray-600">{restaurant.cuisine}</p>
-        </div>
-        <Badge
-          variant={restaurant.status === "active" ? "default" : "secondary"}
-          className={
-            restaurant.status === "active" ? "bg-green-600 text-white" : ""
-          }
-        >
-          {restaurant.status}
-        </Badge>
-      </div>
-
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <div className="rounded-lg bg-blue-50 p-3">
-          <div className="mb-1 flex items-center gap-2 text-blue-600">
-            <ShoppingBag className="h-4 w-4" />
-            <span className="text-xs">Orders Today</span>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-xl font-bold" style={{ color: colors.text.primary }}>
+              {restaurant.name}
+            </h3>
+            <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+              {restaurant.cuisine}
+            </p>
           </div>
-          <p className="text-blue-900">{restaurant.todayOrders}</p>
+          <Badge 
+            variant={restaurant.status === "active" ? "default" : "secondary"}
+            className="capitalize font-semibold"
+            style={{
+              backgroundColor: restaurant.status === "active" ? colors.success[500] : colors.neutral[400],
+              color: colors.text.inverse
+            }}
+          >
+            {restaurant.status}
+          </Badge>
         </div>
 
-        <div className="rounded-lg bg-green-50 p-3">
-          <div className="mb-1 flex items-center gap-2 text-green-600">
-            <DollarSign className="h-4 w-4" />
-            <span className="text-xs">Revenue</span>
+        <div className="grid grid-cols-3 gap-4 pt-4 border-t" style={{ borderColor: colors.border.light }}>
+          <div>
+            <p className="text-xs font-semibold" style={{ color: colors.text.tertiary }}>
+              Today's Orders
+            </p>
+            <p className="text-2xl font-bold mt-1" style={{ color: colors.text.primary }}>
+              {restaurant.todayOrders}
+            </p>
           </div>
-          <p className="text-green-900">
-            ${restaurant.todayRevenue.toLocaleString()}
-          </p>
-        </div>
-      </div>
 
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 text-gray-600">
-            <Users className="h-4 w-4 text-gray-400" />
-            <span>{restaurant.totalMenuItems} items</span>
+          <div>
+            <p className="text-xs font-semibold" style={{ color: colors.text.tertiary }}>
+              Revenue
+            </p>
+            <p className="text-2xl font-bold mt-1" style={{ color: colors.primary[600] }}>
+              ${restaurant.todayRevenue.toLocaleString()}
+            </p>
           </div>
-          <div className="flex items-center gap-1 text-gray-600">
-            <Star className="h-4 w-4 text-yellow-500" />
-            <span>{restaurant.rating.toFixed(1)}</span>
+
+          <div>
+            <p className="text-xs font-semibold" style={{ color: colors.text.tertiary }}>
+              Menu Items
+            </p>
+            <p className="text-2xl font-bold mt-1" style={{ color: colors.text.primary }}>
+              {restaurant.totalMenuItems}
+            </p>
           </div>
         </div>
 
-        <div className={`flex items-center gap-1 ${trendColour}`}>
-          {trendIcon}
-          <span className="text-xs">{restaurant.trendPercentage}%</span>
+        <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: colors.border.light }}>
+          <div className="flex items-center gap-2">
+            <Star className="h-5 w-5" style={{ color: colors.warning[500], fill: colors.warning[500] }} />
+            <span className="font-semibold text-lg" style={{ color: colors.text.primary }}>
+              {restaurant.rating.toFixed(1)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {restaurant.trend === "up" ? (
+              <TrendingUp className="h-5 w-5" style={{ color: colors.success[600] }} />
+            ) : (
+              <TrendingDown className="h-5 w-5" style={{ color: colors.danger[600] }} />
+            )}
+            <span 
+              className="font-semibold text-sm"
+              style={{ color: restaurant.trend === "up" ? colors.success[600] : colors.danger[600] }}
+            >
+              {restaurant.trendPercentage}%
+            </span>
+          </div>
         </div>
       </div>
     </Card>
