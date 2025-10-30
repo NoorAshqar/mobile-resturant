@@ -2,6 +2,12 @@ const { Schema, model, models } = require("mongoose");
 
 const RestaurantSchema = new Schema(
   {
+    admin: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
+      unique: true,
+    },
     name: {
       type: String,
       required: true,

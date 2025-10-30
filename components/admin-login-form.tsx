@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -33,7 +34,7 @@ export function AdminLoginForm() {
     event.preventDefault();
 
     if (!formState.email || !formState.password) {
-      toast.error("Please enter your email and password.");
+      toast.error("Email and password are required.");
       return;
     }
 
@@ -45,7 +46,10 @@ export function AdminLoginForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formState),
+        body: JSON.stringify({
+          email: formState.email,
+          password: formState.password,
+        }),
         credentials: "include",
       });
 
@@ -56,55 +60,78 @@ export function AdminLoginForm() {
         return;
       }
 
-      toast.success("Signed in successfully.");
+      toast.success("Signed in successfully!");
       router.replace("/admin/dashboard");
       router.refresh();
     } catch (error) {
       console.error(error);
-      toast.error("Unable to sign in. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium text-gray-700">
-          Email
+        <label htmlFor="email" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
+          Email Address
         </label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={formState.email}
-          onChange={handleChange}
-          placeholder="admin@example.com"
-          disabled={isSubmitting}
-        />
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={formState.email}
+            onChange={handleChange}
+            disabled={isSubmitting}
+            className="pl-10"
+            style={{ 
+              borderColor: colors.border.DEFAULT,
+              backgroundColor: colors.background.primary 
+            }}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
           Password
         </label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={formState.password}
-          onChange={handleChange}
-          placeholder="••••••••"
-          disabled={isSubmitting}
-        />
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            value={formState.password}
+            onChange={handleChange}
+            disabled={isSubmitting}
+            className="pl-10"
+            style={{ 
+              borderColor: colors.border.DEFAULT,
+              backgroundColor: colors.background.primary 
+            }}
+          />
+        </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        className="w-full text-white transition-all hover:shadow-lg"
+        disabled={isSubmitting}
+        style={{ 
+          backgroundColor: colors.primary[600],
+        }}
+      >
         {isSubmitting ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Signing in…
           </>
         ) : (

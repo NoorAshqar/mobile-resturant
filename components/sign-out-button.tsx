@@ -1,57 +1,48 @@
 'use client';
 
-import { useTransition } from "react";
-import { LogOut, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 
+import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
 export function SignOutButton() {
-  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
-  const handleSignOut = () => {
-    startTransition(async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-          method: "POST",
-          credentials: "include",
-        });
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
 
-        if (!response.ok && response.status !== 401) {
-          toast.error("Failed to sign out.");
-          return;
-        }
-
-        toast.success("Signed out.");
-        window.location.href = "/admin";
-      } catch (error) {
-        console.error(error);
-        toast.error("Something went wrong.");
+      if (response.ok) {
+        toast.success("Signed out successfully");
+        router.replace("/admin");
+        router.refresh();
       }
-    });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sign out");
+    }
   };
 
   return (
-    <Button
-      variant="outline"
-      className="gap-2"
+    <Button 
+      variant="outline" 
       onClick={handleSignOut}
-      disabled={isPending}
+      className="transition-all hover:shadow-md"
+      style={{ 
+        borderColor: colors.border.DEFAULT,
+        color: colors.text.primary 
+      }}
     >
-      {isPending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Signing out…
-        </>
-      ) : (
-        <>
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </>
-      )}
+      <LogOut className="mr-2 h-4 w-4" />
+      Sign Out
     </Button>
   );
 }

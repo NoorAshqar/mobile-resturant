@@ -1,7 +1,9 @@
 'use client';
 
 import Link from "next/link";
+import { Shield } from "lucide-react";
 
+import { colors } from "@/config/colors";
 import { CustomerMenu } from "./customer-menu";
 import { type MenuItemType } from "./menu-item";
 import { Toaster } from "./ui/sonner";
@@ -120,19 +122,22 @@ const selectedRestaurant = {
 
 export function HomePage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: colors.background.secondary }}>
       <Toaster />
 
       <CustomerMenu restaurant={selectedRestaurant} menuItems={mockMenuItems} />
 
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2">
-        <Link
-          href="/admin"
-          className="rounded-full bg-black/80 px-4 py-2 text-sm text-white shadow-lg transition hover:bg-black"
-        >
-          Admin login
-        </Link>
-      </div>
+      <Link
+        href="/admin"
+        className="fixed bottom-6 left-6 z-40 rounded-full px-6 py-3 text-sm font-bold shadow-2xl transition-all hover:scale-105 flex items-center gap-2"
+        style={{ 
+          backgroundColor: colors.neutral[900],
+          color: colors.text.inverse
+        }}
+      >
+        <Shield className="h-5 w-5" />
+        Admin Portal
+      </Link>
     </div>
   );
 }
