@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { MapPin, Search, Star, Clock, DollarSign } from "lucide-react";
 import { toast } from "sonner";
-
 import { colors } from "@/config/colors";
 import { Cart } from "./cart";
 import { MenuItem, type MenuItemType } from "./menu-item";
@@ -179,7 +178,8 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
                   backgroundColor: isActive ? colors.primary[600] : colors.background.primary,
                   color: isActive ? colors.text.inverse : colors.text.primary,
                   borderColor: isActive ? colors.primary[600] : colors.border.DEFAULT,
-                  border: '2px solid'
+                  borderWidth: '2px',
+                  borderStyle: 'solid'
                 }}
               >
                 {category}

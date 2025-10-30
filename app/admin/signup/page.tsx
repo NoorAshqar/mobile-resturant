@@ -33,10 +33,10 @@ export default function AdminSignupPage() {
                 Already have an account?{" "}
                 <Link 
                   href="/admin" 
-                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all"
+                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all align-middle"
                   style={{ color: colors.primary[600] }}
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4 align-middle" />
                   Sign in instead
                 </Link>
               </p>

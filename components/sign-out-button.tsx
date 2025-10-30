@@ -33,14 +33,10 @@ export function SignOutButton() {
 
   return (
     <Button 
-      variant="outline" 
+      variant={null}
       onClick={handleSignOut}
-      className="transition-all hover:shadow-md"
-      style={{ 
-        borderColor: colors.border.DEFAULT,
-        color: colors.text.primary 
-      }}
-    >
+      className="transition-all hover:shadow-md text-white"
+      style={{ backgroundColor: colors.primary[600] }}>
       <LogOut className="mr-2 h-4 w-4" />
       Sign Out
     </Button>
