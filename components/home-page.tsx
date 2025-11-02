@@ -1,122 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Shield } from "lucide-react";
+import { Shield, Store, Table as TableIcon, ShoppingCart, ArrowRight, CheckCircle } from "lucide-react";
 
 import { colors } from "@/config/colors";
-import { CustomerMenu } from "./customer-menu";
-import { type MenuItemType } from "./menu-item";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
 import { Toaster } from "./ui/sonner";
-
-const mockMenuItems: MenuItemType[] = [
-  {
-    id: "1",
-    name: "Classic Cheeseburger",
-    description:
-      "Juicy beef patty with cheddar cheese, lettuce, tomato, and special sauce.",
-    price: 12.99,
-    image:
-      "https://images.unsplash.com/photo-1722125680299-783f98369451?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Burgers",
-    popular: true,
-  },
-  {
-    id: "2",
-    name: "Margherita Pizza",
-    description: "Fresh mozzarella, tomatoes, and basil on wood-fired crust.",
-    price: 14.99,
-    image:
-      "https://images.unsplash.com/photo-1727198826083-6693684e4fc1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Pizza",
-    popular: true,
-    vegetarian: true,
-  },
-  {
-    id: "3",
-    name: "Creamy Pasta Carbonara",
-    description: "Classic Italian pasta with bacon, eggs, and parmesan cheese.",
-    price: 16.99,
-    image:
-      "https://images.unsplash.com/photo-1749169337822-d875fd6f4c9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Pasta",
-  },
-  {
-    id: "4",
-    name: "Caesar Salad",
-    description:
-      "Crisp romaine lettuce, parmesan, croutons, and Caesar dressing.",
-    price: 9.99,
-    image:
-      "https://images.unsplash.com/photo-1651352650142-385087834d9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Salads",
-    vegetarian: true,
-  },
-  {
-    id: "5",
-    name: "Sushi Platter",
-    description: "Assorted fresh sushi rolls with wasabi and ginger.",
-    price: 24.99,
-    image:
-      "https://images.unsplash.com/photo-1700324822763-956100f79b0d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Sushi",
-    popular: true,
-  },
-  {
-    id: "6",
-    name: "Beef Tacos",
-    description: "Soft tacos with seasoned beef, salsa, and fresh toppings.",
-    price: 11.99,
-    image:
-      "https://images.unsplash.com/photo-1757774551171-91143e145b0a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Tacos",
-  },
-  {
-    id: "7",
-    name: "Bacon Cheeseburger",
-    description: "Double beef patty with crispy bacon and smoky BBQ sauce.",
-    price: 15.99,
-    image:
-      "https://images.unsplash.com/photo-1722125680299-783f98369451?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Burgers",
-  },
-  {
-    id: "8",
-    name: "Pepperoni Pizza",
-    description: "Classic pepperoni with mozzarella on signature crust.",
-    price: 16.99,
-    image:
-      "https://images.unsplash.com/photo-1727198826083-6693684e4fc1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Pizza",
-  },
-  {
-    id: "9",
-    name: "Greek Salad",
-    description: "Fresh vegetables with feta cheese, olives, and vinaigrette.",
-    price: 10.99,
-    image:
-      "https://images.unsplash.com/photo-1651352650142-385087834d9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Salads",
-    vegetarian: true,
-  },
-  {
-    id: "10",
-    name: "Spicy Tuna Roll",
-    description: "Fresh tuna with spicy mayo and crisp cucumber.",
-    price: 13.99,
-    image:
-      "https://images.unsplash.com/photo-1700324822763-956100f79b0d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-    category: "Sushi",
-  },
-];
-
-const selectedRestaurant = {
-  id: "1",
-  name: "The Burger Palace",
-  cuisine: "American - Burgers - Fast Food",
-  rating: 4.6,
-  deliveryTime: "25-35 min",
-  deliveryFee: 2.99,
-};
 
 export function HomePage() {
   return (
@@ -126,19 +16,352 @@ export function HomePage() {
     >
       <Toaster />
 
-      <CustomerMenu restaurant={selectedRestaurant} menuItems={mockMenuItems} />
-
-      <Link
-        href="/admin"
-        className="fixed top-3 left-3 z-40 rounded-full px-6 py-3 text-sm font-bold shadow-2xl transition-all hover:scale-105 flex items-center gap-2"
-        style={{
-          backgroundColor: colors.neutral[900],
-          color: colors.text.inverse,
+      {/* Header */}
+      <header 
+        className="border-b-2 sticky top-0 z-50 shadow-sm"
+        style={{ 
+          backgroundColor: colors.background.primary,
+          borderColor: colors.border.light 
         }}
       >
-        <Shield className="h-5 w-5" />
-        Admin Portal
-      </Link>
+        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div 
+              className="flex h-10 w-10 items-center justify-center rounded-xl"
+              style={{ backgroundColor: colors.primary[600] }}
+            >
+              <Store className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-xl font-bold" style={{ color: colors.text.primary }}>
+              Restaurant Manager
+            </h1>
+          </div>
+          <Link href="/admin">
+            <Button
+              variant="outline"
+              className="border-2 font-semibold"
+              style={{ 
+                borderColor: colors.border.DEFAULT,
+                backgroundColor: colors.background.primary
+              }}
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Admin Portal
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="mx-auto max-w-7xl px-4 py-16 md:py-24">
+        <div className="text-center">
+          <h2 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
+            style={{ color: colors.text.primary }}
+          >
+            Manage Your Restaurant
+            <br />
+            <span style={{ color: colors.primary[600] }}>The Easy Way</span>
+          </h2>
+          <p 
+            className="text-lg md:text-xl mb-8 max-w-2xl mx-auto"
+            style={{ color: colors.text.secondary }}
+          >
+            Complete restaurant management system for digital menus, table orders, and seamless customer experience.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/admin/signup">
+              <Button
+                className="text-white font-semibold shadow-lg px-8 py-6 text-lg"
+                style={{ backgroundColor: colors.primary[600] }}
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/admin">
+              <Button
+                variant="outline"
+                className="font-semibold border-2 px-8 py-6 text-lg"
+                style={{ 
+                  borderColor: colors.border.DEFAULT,
+                  backgroundColor: colors.background.primary
+                }}
+              >
+                Sign In
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="mx-auto max-w-7xl px-4 py-16">
+        <h3 
+          className="text-3xl md:text-4xl font-bold text-center mb-12"
+          style={{ color: colors.text.primary }}
+        >
+          Everything You Need
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Feature 1: Sign Up Restaurant */}
+          <Card 
+            className="p-8 border-2 transition-all hover:shadow-xl"
+            style={{ 
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light 
+            }}
+          >
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-xl mb-6"
+              style={{ backgroundColor: colors.primary[100] }}
+            >
+              <Store className="h-8 w-8" style={{ color: colors.primary[600] }} />
+            </div>
+            <h4 
+              className="text-xl font-bold mb-3"
+              style={{ color: colors.text.primary }}
+            >
+              Sign Up Your Restaurant
+            </h4>
+            <p 
+              className="text-base mb-4"
+              style={{ color: colors.text.secondary }}
+            >
+              Create your restaurant profile, manage your menu items, and set up your business in minutes.
+            </p>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Easy setup process
+              </li>
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Customize your menu
+              </li>
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Manage restaurant details
+              </li>
+            </ul>
+          </Card>
+
+          {/* Feature 2: Tables */}
+          <Card 
+            className="p-8 border-2 transition-all hover:shadow-xl"
+            style={{ 
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light 
+            }}
+          >
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-xl mb-6"
+              style={{ backgroundColor: colors.secondary[100] }}
+            >
+              <TableIcon className="h-8 w-8" style={{ color: colors.secondary[600] }} />
+            </div>
+            <h4 
+              className="text-xl font-bold mb-3"
+              style={{ color: colors.text.primary }}
+            >
+              Manage Tables
+            </h4>
+            <p 
+              className="text-base mb-4"
+              style={{ color: colors.text.secondary }}
+            >
+              Set up tables with unique QR codes. Customers can scan and order directly from their table.
+            </p>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Table management system
+              </li>
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Real-time order tracking
+              </li>
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Digital menus per table
+              </li>
+            </ul>
+          </Card>
+
+          {/* Feature 3: Pay or Order */}
+          <Card 
+            className="p-8 border-2 transition-all hover:shadow-xl"
+            style={{ 
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light 
+            }}
+          >
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-xl mb-6"
+              style={{ backgroundColor: colors.success[100] }}
+            >
+              <ShoppingCart className="h-8 w-8" style={{ color: colors.success[600] }} />
+            </div>
+            <h4 
+              className="text-xl font-bold mb-3"
+              style={{ color: colors.text.primary }}
+            >
+              Pay or Order
+            </h4>
+            <p 
+              className="text-base mb-4"
+              style={{ color: colors.text.secondary }}
+            >
+              Customers can browse menus, place orders, and view their bill. Seamless ordering experience.
+            </p>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Easy ordering system
+              </li>
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Live bill tracking
+              </li>
+              <li className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <CheckCircle className="h-4 w-4" style={{ color: colors.success[600] }} />
+                Simple payment process
+              </li>
+            </ul>
+          </Card>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section 
+        className="mx-auto max-w-7xl px-4 py-16"
+        style={{ backgroundColor: colors.background.primary }}
+      >
+        <h3 
+          className="text-3xl md:text-4xl font-bold text-center mb-12"
+          style={{ color: colors.text.primary }}
+        >
+          How It Works
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-full mx-auto mb-4"
+              style={{ backgroundColor: colors.primary[100] }}
+            >
+              <span className="text-2xl font-bold" style={{ color: colors.primary[600] }}>1</span>
+            </div>
+            <h4 
+              className="text-lg font-bold mb-2"
+              style={{ color: colors.text.primary }}
+            >
+              Sign Up
+            </h4>
+            <p className="text-sm" style={{ color: colors.text.secondary }}>
+              Create your restaurant account and complete your profile
+            </p>
+          </div>
+          <div className="text-center">
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-full mx-auto mb-4"
+              style={{ backgroundColor: colors.secondary[100] }}
+            >
+              <span className="text-2xl font-bold" style={{ color: colors.secondary[600] }}>2</span>
+            </div>
+            <h4 
+              className="text-lg font-bold mb-2"
+              style={{ color: colors.text.primary }}
+            >
+              Set Up Tables
+            </h4>
+            <p className="text-sm" style={{ color: colors.text.secondary }}>
+              Add your tables and generate unique links for each table
+            </p>
+          </div>
+          <div className="text-center">
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-full mx-auto mb-4"
+              style={{ backgroundColor: colors.warning[100] }}
+            >
+              <span className="text-2xl font-bold" style={{ color: colors.warning[600] }}>3</span>
+            </div>
+            <h4 
+              className="text-lg font-bold mb-2"
+              style={{ color: colors.text.primary }}
+            >
+              Manage Menu
+            </h4>
+            <p className="text-sm" style={{ color: colors.text.secondary }}>
+              Add menu items, categories, and prices to your digital menu
+            </p>
+          </div>
+          <div className="text-center">
+            <div 
+              className="flex h-16 w-16 items-center justify-center rounded-full mx-auto mb-4"
+              style={{ backgroundColor: colors.success[100] }}
+            >
+              <span className="text-2xl font-bold" style={{ color: colors.success[600] }}>4</span>
+            </div>
+            <h4 
+              className="text-lg font-bold mb-2"
+              style={{ color: colors.text.primary }}
+            >
+              Start Serving
+            </h4>
+            <p className="text-sm" style={{ color: colors.text.secondary }}>
+              Customers order from their table, you manage orders in real-time
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="mx-auto max-w-7xl px-4 py-16">
+        <Card 
+          className="p-12 text-center border-2"
+          style={{ 
+            backgroundColor: colors.primary[50],
+            borderColor: colors.primary[200] 
+          }}
+        >
+          <h3 
+            className="text-3xl md:text-4xl font-bold mb-4"
+            style={{ color: colors.text.primary }}
+          >
+            Ready to Get Started?
+          </h3>
+          <p 
+            className="text-lg mb-8 max-w-2xl mx-auto"
+            style={{ color: colors.text.secondary }}
+          >
+            Join restaurants already using our platform to streamline their operations and improve customer experience.
+          </p>
+          <Link href="/admin/signup">
+            <Button
+              className="text-white font-semibold shadow-lg px-8 py-6 text-lg"
+              style={{ backgroundColor: colors.primary[600] }}
+            >
+              Sign Up Your Restaurant
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </Card>
+      </section>
+
+      {/* Footer */}
+      <footer 
+        className="border-t-2 py-8"
+        style={{ 
+          backgroundColor: colors.background.primary,
+          borderColor: colors.border.light 
+        }}
+      >
+        <div className="mx-auto max-w-7xl px-4 text-center">
+          <p className="text-sm" style={{ color: colors.text.secondary }}>
+            © 2025 Restaurant Manager. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -9,6 +9,9 @@ const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
 const menuRoutes = require("./routes/menu");
 const restaurantRoutes = require("./routes/restaurant");
+const tableRoutes = require("./routes/table");
+const orderRoutes = require("./routes/order");
+const publicRoutes = require("./routes/public");
 
 const app = express();
 
@@ -32,6 +35,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/restaurant", restaurantRoutes);
+app.use("/api/table", tableRoutes);
+app.use("/api/order", orderRoutes);
+app.use("/api/public", publicRoutes);
 
 const PORT = process.env.PORT || 4000;
 

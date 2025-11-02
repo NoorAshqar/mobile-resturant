@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, UtensilsCrossed, Settings, Store } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, Settings, Store, Table as TableIcon, Receipt } from "lucide-react";
 
 import { colors } from "@/config/colors";
 
@@ -16,6 +16,16 @@ const navigation = [
     name: "Menu Items",
     href: "/admin/dashboard/menu",
     icon: UtensilsCrossed,
+  },
+  {
+    name: "Tables",
+    href: "/admin/dashboard/tables",
+    icon: TableIcon,
+  },
+  {
+    name: "Orders",
+    href: "/admin/dashboard/orders",
+    icon: Receipt,
   },
   {
     name: "Restaurant Settings",
