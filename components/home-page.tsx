@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { Shield } from "lucide-react";
@@ -34,8 +34,7 @@ const mockMenuItems: MenuItemType[] = [
   {
     id: "3",
     name: "Creamy Pasta Carbonara",
-    description:
-      "Classic Italian pasta with bacon, eggs, and parmesan cheese.",
+    description: "Classic Italian pasta with bacon, eggs, and parmesan cheese.",
     price: 16.99,
     image:
       "https://images.unsplash.com/photo-1749169337822-d875fd6f4c9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
@@ -92,8 +91,7 @@ const mockMenuItems: MenuItemType[] = [
   {
     id: "9",
     name: "Greek Salad",
-    description:
-      "Fresh vegetables with feta cheese, olives, and vinaigrette.",
+    description: "Fresh vegetables with feta cheese, olives, and vinaigrette.",
     price: 10.99,
     image:
       "https://images.unsplash.com/photo-1651352650142-385087834d9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
@@ -122,17 +120,20 @@ const selectedRestaurant = {
 
 export function HomePage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.background.secondary }}>
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: colors.background.secondary }}
+    >
       <Toaster />
 
       <CustomerMenu restaurant={selectedRestaurant} menuItems={mockMenuItems} />
 
       <Link
         href="/admin"
-        className="fixed bottom-6 left-6 z-40 rounded-full px-6 py-3 text-sm font-bold shadow-2xl transition-all hover:scale-105 flex items-center gap-2"
-        style={{ 
+        className="fixed top-3 left-3 z-40 rounded-full px-6 py-3 text-sm font-bold shadow-2xl transition-all hover:scale-105 flex items-center gap-2"
+        style={{
           backgroundColor: colors.neutral[900],
-          color: colors.text.inverse
+          color: colors.text.inverse,
         }}
       >
         <Shield className="h-5 w-5" />
