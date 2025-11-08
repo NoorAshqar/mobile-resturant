@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -33,13 +32,15 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
       capacity: 0,
       status: "available",
       location: "",
-    }
+    },
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = event.target;
-    
+
     if (name === "number" || name === "capacity") {
       setFormState((prev) => ({ ...prev, [name]: parseInt(value) || 0 }));
     } else {
@@ -66,7 +67,7 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
       const url = table?.id
         ? `${API_BASE_URL}/api/table/${table.id}`
         : `${API_BASE_URL}/api/table`;
-      
+
       const method = table?.id ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -96,23 +97,15 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
   };
 
   return (
-    <Card 
-      className="border-2"
-      style={{ 
-        backgroundColor: colors.background.primary,
-        borderColor: colors.border.light 
-      }}
-    >
+    <Card className="border-2">
       <CardHeader>
-        <CardTitle style={{ color: colors.text.primary }}>
-          {table?.id ? "Edit Table" : "Add New Table"}
-        </CardTitle>
+        <CardTitle>{table?.id ? "Edit Table" : "Add New Table"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="number" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="number" className="text-sm font-semibold">
                 Table Number *
               </label>
               <Input
@@ -125,15 +118,11 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="capacity" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="capacity" className="text-sm font-semibold">
                 Capacity (seats) *
               </label>
               <Input
@@ -146,16 +135,12 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="status" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+            <label htmlFor="status" className="text-sm font-semibold">
               Status *
             </label>
             <select
@@ -166,11 +151,6 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
               disabled={isSubmitting}
               required
               className="w-full rounded-md border px-3 py-2 text-sm"
-              style={{ 
-                borderColor: colors.border.DEFAULT,
-                backgroundColor: colors.background.primary,
-                color: colors.text.primary
-              }}
             >
               <option value="available">Available</option>
               <option value="occupied">Occupied</option>
@@ -180,7 +160,7 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="location" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+            <label htmlFor="location" className="text-sm font-semibold">
               Location
             </label>
             <Input
@@ -191,10 +171,6 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
               value={formState.location}
               onChange={handleChange}
               disabled={isSubmitting}
-              style={{ 
-                borderColor: colors.border.DEFAULT,
-                backgroundColor: colors.background.primary 
-              }}
             />
           </div>
 
@@ -203,7 +179,6 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
               type="submit"
               className="flex-1 text-white font-semibold"
               disabled={isSubmitting}
-              style={{ backgroundColor: colors.primary[600] }}
             >
               {isSubmitting ? (
                 <>
@@ -222,7 +197,6 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
-              style={{ borderColor: colors.border.DEFAULT }}
             >
               Cancel
             </Button>
@@ -232,4 +206,3 @@ export function TableForm({ table, onSuccess, onCancel }: TableFormProps) {
     </Card>
   );
 }
-

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Search, Table as TableIcon } from "lucide-react";
@@ -28,7 +28,9 @@ export default function TableManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingTable, setEditingTable] = useState<Table | undefined>(undefined);
+  const [editingTable, setEditingTable] = useState<Table | undefined>(
+    undefined,
+  );
 
   const fetchTables = async () => {
     try {
@@ -60,7 +62,7 @@ export default function TableManagementPage() {
         table.number.toString().includes(query) ||
         table.capacity.toString().includes(query) ||
         table.status.toLowerCase().includes(query) ||
-        table.location.toLowerCase().includes(query)
+        table.location.toLowerCase().includes(query),
     );
     setFilteredTables(filtered);
   }, [searchQuery, tables]);
@@ -134,9 +136,7 @@ export default function TableManagementPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-lg" style={{ color: colors.text.secondary }}>
-          Loading tables...
-        </p>
+        <p className="text-lg">Loading tables...</p>
       </div>
     );
   }
@@ -148,17 +148,12 @@ export default function TableManagementPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-                Tables
-              </h2>
-              <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                Manage your restaurant tables
-              </p>
+              <h2 className="text-2xl font-bold">Tables</h2>
+              <p className="text-sm mt-1">Manage your restaurant tables</p>
             </div>
             <Button
               onClick={handleAdd}
               className="text-white font-semibold shadow-md"
-              style={{ backgroundColor: colors.primary[600] }}
             >
               <Plus className="mr-2 h-5 w-5" />
               Add Table
@@ -166,28 +161,15 @@ export default function TableManagementPage() {
           </div>
 
           {/* Search */}
-          <Card 
-            className="p-4 border-2"
-            style={{ 
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light 
-            }}
-          >
+          <Card className="p-4 border-2">
             <div className="relative">
-              <Search 
-                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" 
-                style={{ color: colors.text.tertiary }} 
-              />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" />
               <Input
                 type="text"
                 placeholder="Search tables by number, capacity, status, or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 text-base"
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
           </Card>
@@ -196,46 +178,34 @@ export default function TableManagementPage() {
           {filteredTables.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {filteredTables.map((table) => (
-                <Card 
+                <Card
                   key={table.id}
                   className="overflow-hidden border-2 transition-all hover:shadow-lg"
-                  style={{ 
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light 
-                  }}
                 >
                   <div className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3">
-                        <div 
-                          className="flex h-12 w-12 items-center justify-center rounded-xl"
-                          style={{ backgroundColor: colors.primary[100] }}
-                        >
-                          <TableIcon className="h-6 w-6" style={{ color: colors.primary[600] }} />
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl">
+                          <TableIcon className="h-6 w-6" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg" style={{ color: colors.text.primary }}>
+                          <h3 className="font-bold text-lg">
                             Table {table.number}
                           </h3>
-                          <p className="text-sm" style={{ color: colors.text.secondary }}>
-                            {table.capacity} {table.capacity === 1 ? "seat" : "seats"}
+                          <p className="text-sm">
+                            {table.capacity}{" "}
+                            {table.capacity === 1 ? "seat" : "seats"}
                           </p>
                         </div>
                       </div>
-                      <Badge 
-                        className="font-semibold"
-                        style={{ 
-                          backgroundColor: getStatusColor(table.status),
-                          color: colors.text.inverse 
-                        }}
-                      >
+                      <Badge className="font-semibold">
                         {getStatusLabel(table.status)}
                       </Badge>
                     </div>
 
                     {table.location && (
-                      <div className="pt-2 border-t" style={{ borderColor: colors.border.light }}>
-                        <p className="text-sm" style={{ color: colors.text.secondary }}>
+                      <div className="pt-2 border-t">
+                        <p className="text-sm">
                           <span className="font-semibold">Location: </span>
                           {table.location}
                         </p>
@@ -248,7 +218,6 @@ export default function TableManagementPage() {
                         variant="outline"
                         onClick={() => handleEdit(table)}
                         className="flex-1 border-2"
-                        style={{ borderColor: colors.border.DEFAULT }}
                       >
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit
@@ -258,10 +227,6 @@ export default function TableManagementPage() {
                         variant="outline"
                         onClick={() => handleDelete(table.id)}
                         className="border-2 hover:bg-red-50"
-                        style={{ 
-                          borderColor: colors.danger[300],
-                          color: colors.danger[600] 
-                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -271,21 +236,17 @@ export default function TableManagementPage() {
               ))}
             </div>
           ) : (
-            <Card 
-              className="p-12 text-center border-2"
-              style={{ 
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light 
-              }}
-            >
-              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: colors.neutral[100] }}>
-                <TableIcon className="h-10 w-10" style={{ color: colors.text.tertiary }} />
+            <Card className="p-12 text-center border-2">
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                <TableIcon className="h-10 w-10" />
               </div>
-              <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+              <p className="text-lg font-semibold">
                 {searchQuery ? "No tables found" : "No tables yet"}
               </p>
-              <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                {searchQuery ? "Try adjusting your search" : "Click 'Add Table' to get started"}
+              <p className="text-sm mt-1">
+                {searchQuery
+                  ? "Try adjusting your search"
+                  : "Click 'Add Table' to get started"}
               </p>
             </Card>
           )}
@@ -300,4 +261,3 @@ export default function TableManagementPage() {
     </div>
   );
 }
-

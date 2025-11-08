@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { colors } from "@/config/colors";
 import { CreateRestaurantForm } from "@/components/create-restaurant-form";
 import type { RestaurantData } from "@/components/restaurant-card";
 import { RestaurantDashboard } from "@/components/restaurant-dashboard";
@@ -49,7 +48,7 @@ export default async function AdminDashboardPage() {
 
   if (!data.restaurant) {
     return (
-      <div className="flex items-center justify-center p-6" style={{ backgroundColor: colors.background.secondary }}>
+      <div className="flex items-center justify-center p-6">
         <CreateRestaurantForm />
       </div>
     );

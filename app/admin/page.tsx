@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { colors } from "@/config/colors";
 
 export default async function AdminLoginPage() {
   const cookieStore = await cookies();
@@ -22,36 +21,16 @@ export default async function AdminLoginPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{ backgroundColor: colors.background.secondary }}
-    >
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <Card
-          className="border-2 shadow-2xl"
-          style={{
-            backgroundColor: colors.background.primary,
-            borderColor: colors.border.light,
-          }}
-        >
+        <Card className="border-2 shadow-2xl">
           <CardHeader className="text-center space-y-4">
-            <div
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full shadow-lg"
-              style={{ backgroundColor: colors.primary[600] }}
-            >
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full shadow-lg">
               <Shield className="h-10 w-10 text-white" />
             </div>
             <div>
-              <CardTitle
-                className="text-3xl font-bold"
-                style={{ color: colors.text.primary }}
-              >
-                Admin Portal
-              </CardTitle>
-              <CardDescription
-                className="text-base mt-2"
-                style={{ color: colors.text.secondary }}
-              >
+              <CardTitle className="text-3xl font-bold">Admin Portal</CardTitle>
+              <CardDescription className="text-base mt-2">
                 Sign in to manage your restaurant
               </CardDescription>
             </div>
@@ -59,12 +38,11 @@ export default async function AdminLoginPage() {
           <CardContent>
             <AdminLoginForm />
             <div className="mt-6 text-center">
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
-                Don&apos;t have an account?{" "}
+              <p className="text-sm">
+                Don&apos;t have an account?
                 <Link
                   href="/admin/signup"
-                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all"
-                  style={{ color: colors.primary[600] }}
+                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all ml-2"
                 >
                   Create one now
                   <ArrowRight className="h-4 w-4" />

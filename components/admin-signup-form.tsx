@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -81,11 +80,11 @@ export function AdminSignupForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
+        <label htmlFor="email" className="block text-sm font-semibold">
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+          <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
           <Input
             id="email"
             name="email"
@@ -96,20 +95,16 @@ export function AdminSignupForm() {
             onChange={handleChange}
             disabled={isSubmitting}
             className="pl-10"
-            style={{ 
-              borderColor: colors.border.DEFAULT,
-              backgroundColor: colors.background.primary 
-            }}
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
+        <label htmlFor="password" className="block text-sm font-semibold">
           Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+          <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
           <Input
             id="password"
             name="password"
@@ -120,20 +115,19 @@ export function AdminSignupForm() {
             onChange={handleChange}
             disabled={isSubmitting}
             className="pl-10"
-            style={{ 
-              borderColor: colors.border.DEFAULT,
-              backgroundColor: colors.background.primary 
-            }}
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="confirmPassword" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
+        <label
+          htmlFor="confirmPassword"
+          className="block text-sm font-semibold"
+        >
           Confirm Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+          <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
           <Input
             id="confirmPassword"
             name="confirmPassword"
@@ -144,21 +138,14 @@ export function AdminSignupForm() {
             onChange={handleChange}
             disabled={isSubmitting}
             className="pl-10"
-            style={{ 
-              borderColor: colors.border.DEFAULT,
-              backgroundColor: colors.background.primary 
-            }}
           />
         </div>
       </div>
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         className="w-full text-white transition-all hover:shadow-lg"
         disabled={isSubmitting}
-        style={{ 
-          backgroundColor: colors.primary[600],
-        }}
       >
         {isSubmitting ? (
           <>

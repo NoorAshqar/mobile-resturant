@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,7 +33,9 @@ export default function MenuManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | undefined>(undefined);
+  const [editingItem, setEditingItem] = useState<MenuItem | undefined>(
+    undefined,
+  );
 
   const fetchMenuItems = async () => {
     try {
@@ -63,7 +66,7 @@ export default function MenuManagementPage() {
       (item) =>
         item.name.toLowerCase().includes(query) ||
         item.category.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query)
+        item.description.toLowerCase().includes(query),
     );
     setFilteredItems(filtered);
   }, [searchQuery, menuItems]);
@@ -115,9 +118,7 @@ export default function MenuManagementPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-lg" style={{ color: colors.text.secondary }}>
-          Loading menu items...
-        </p>
+        <p className="text-lg">Loading menu items...</p>
       </div>
     );
   }
@@ -129,17 +130,12 @@ export default function MenuManagementPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-                Menu Items
-              </h2>
-              <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                Manage your restaurant menu items
-              </p>
+              <h2 className="text-2xl font-bold">Menu Items</h2>
+              <p className="text-sm mt-1">Manage your restaurant menu items</p>
             </div>
             <Button
               onClick={handleAdd}
-              className="text-white font-semibold shadow-md"
-              style={{ backgroundColor: colors.primary[600] }}
+              className="font-semibold shadow-md"
             >
               <Plus className="mr-2 h-5 w-5" />
               Add Menu Item
@@ -147,28 +143,15 @@ export default function MenuManagementPage() {
           </div>
 
           {/* Search */}
-          <Card 
-            className="p-4 border-2"
-            style={{ 
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light 
-            }}
-          >
+          <Card className="p-4 border-2">
             <div className="relative">
-              <Search 
-                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" 
-                style={{ color: colors.text.tertiary }} 
-              />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" />
               <Input
                 type="text"
                 placeholder="Search menu items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 text-base"
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
           </Card>
@@ -177,42 +160,23 @@ export default function MenuManagementPage() {
           {filteredItems.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map((item) => (
-                <Card 
+                <Card
                   key={item.id}
                   className="overflow-hidden border-2 transition-all hover:shadow-lg"
-                  style={{ 
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light 
-                  }}
                 >
-                  <div className="relative h-48 w-full" style={{ backgroundColor: colors.neutral[100] }}>
-                    <img
+                  <div className="relative h-48 w-full">
+                    <Image
                       src={item.image}
                       alt={item.name}
                       className="h-full w-full object-cover"
+                      fill
                     />
                     <div className="absolute top-3 right-3 flex gap-2">
                       {item.popular && (
-                        <Badge 
-                          className="font-semibold"
-                          style={{ 
-                            backgroundColor: colors.primary[600],
-                            color: colors.text.inverse 
-                          }}
-                        >
-                          Popular
-                        </Badge>
+                        <Badge className="font-semibold">Popular</Badge>
                       )}
                       {item.vegetarian && (
-                        <Badge 
-                          className="font-semibold"
-                          style={{ 
-                            backgroundColor: colors.success[600],
-                            color: colors.text.inverse 
-                          }}
-                        >
-                          Veg
-                        </Badge>
+                        <Badge className="font-semibold">Veg</Badge>
                       )}
                     </div>
                   </div>
@@ -220,29 +184,26 @@ export default function MenuManagementPage() {
                   <div className="p-4 space-y-3">
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="font-bold text-lg" style={{ color: colors.text.primary }}>
-                          {item.name}
-                        </h3>
-                        <Badge 
+                        <h3 className="font-bold text-lg">{item.name}</h3>
+                        <Badge
                           className="font-semibold"
-                          style={{ 
-                            backgroundColor: item.available ? colors.success[500] : colors.neutral[400],
-                            color: colors.text.inverse 
+                          style={{
+                            backgroundColor: item.available
+                              ? colors.success[500]
+                              : colors.neutral[400],
                           }}
                         >
                           {item.available ? "Available" : "Unavailable"}
                         </Badge>
                       </div>
-                      <p className="text-xs font-semibold mb-2" style={{ color: colors.text.tertiary }}>
+                      <p className="text-xs font-semibold mb-2">
                         {item.category}
                       </p>
-                      <p className="text-sm line-clamp-2" style={{ color: colors.text.secondary }}>
-                        {item.description}
-                      </p>
+                      <p className="text-sm line-clamp-2">{item.description}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: colors.border.light }}>
-                      <span className="text-2xl font-bold" style={{ color: colors.primary[600] }}>
+                    <div className="flex items-center justify-between pt-3 border-t">
+                      <span className="text-2xl font-bold">
                         ${item.price.toFixed(2)}
                       </span>
 
@@ -252,7 +213,6 @@ export default function MenuManagementPage() {
                           variant="outline"
                           onClick={() => handleEdit(item)}
                           className="border-2"
-                          style={{ borderColor: colors.border.DEFAULT }}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -261,10 +221,6 @@ export default function MenuManagementPage() {
                           variant="outline"
                           onClick={() => handleDelete(item.id)}
                           className="border-2 hover:bg-red-50"
-                          style={{ 
-                            borderColor: colors.danger[300],
-                            color: colors.danger[600] 
-                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -275,21 +231,17 @@ export default function MenuManagementPage() {
               ))}
             </div>
           ) : (
-            <Card 
-              className="p-12 text-center border-2"
-              style={{ 
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light 
-              }}
-            >
-              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: colors.neutral[100] }}>
-                <Search className="h-10 w-10" style={{ color: colors.text.tertiary }} />
+            <Card className="p-12 text-center border-2">
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                <Search className="h-10 w-10" />
               </div>
-              <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+              <p className="text-lg font-semibold">
                 {searchQuery ? "No menu items found" : "No menu items yet"}
               </p>
-              <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                {searchQuery ? "Try adjusting your search" : "Click 'Add Menu Item' to get started"}
+              <p className="text-sm mt-1">
+                {searchQuery
+                  ? "Try adjusting your search"
+                  : "Click 'Add Menu Item' to get started"}
               </p>
             </Card>
           )}
@@ -304,4 +256,3 @@ export default function MenuManagementPage() {
     </div>
   );
 }
-

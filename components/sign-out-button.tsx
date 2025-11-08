@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 
 const API_BASE_URL =
@@ -32,11 +31,11 @@ export function SignOutButton() {
   };
 
   return (
-    <Button 
+    <Button
       variant={null}
       onClick={handleSignOut}
       className="transition-all hover:shadow-md text-white"
-      style={{ backgroundColor: colors.primary[600] }}>
+    >
       <LogOut className="mr-2 h-4 w-4" />
       Sign Out
     </Button>

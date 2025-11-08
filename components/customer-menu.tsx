@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useMemo, useState } from "react";
 import { MapPin, Search, Star, Clock, DollarSign } from "lucide-react";
@@ -93,49 +93,38 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
     );
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: colors.background.secondary }}>
+    <div className="min-h-screen pb-24">
       {/* Restaurant Header */}
-      <div 
-        className="shadow-md border-b-2"
-        style={{ 
-          backgroundColor: colors.background.primary,
-          borderColor: colors.border.light 
-        }}
-      >
+      <div className="shadow-md border-b-2">
         <div className="mx-auto max-w-3xl px-4 py-6">
-          <div className="mb-4 flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
-            <MapPin className="h-5 w-5" style={{ color: colors.primary[600] }} />
+          <div className="mb-4 flex items-center gap-2 text-sm">
+            <MapPin className="h-5 w-5" />
             <span className="font-semibold">Delivering to Home</span>
           </div>
 
-          <h1 className="text-3xl font-bold mb-2" style={{ color: colors.text.primary }}>
-            {restaurant.name}
-          </h1>
-          <p className="text-base mb-4" style={{ color: colors.text.secondary }}>
-            {restaurant.cuisine}
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{restaurant.name}</h1>
+          <p className="text-base mb-4">{restaurant.cuisine}</p>
 
           <div className="flex items-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <div 
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg"
-                style={{ backgroundColor: colors.warning[50] }}
-              >
-                <Star className="h-5 w-5" style={{ color: colors.warning[500], fill: colors.warning[500] }} />
-                <span className="font-bold" style={{ color: colors.text.primary }}>
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg">
+                <Star className="h-5 w-5" />
+                <span className="font-bold">
                   {restaurant.rating.toFixed(1)}
                 </span>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2" style={{ color: colors.text.secondary }}>
-              <Clock className="h-5 w-5" style={{ color: colors.secondary[600] }} />
+
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
               <span className="font-semibold">{restaurant.deliveryTime}</span>
             </div>
-            
-            <div className="flex items-center gap-2" style={{ color: colors.text.secondary }}>
-              <DollarSign className="h-5 w-5" style={{ color: colors.success[600] }} />
-              <span className="font-semibold">${restaurant.deliveryFee.toFixed(2)} delivery</span>
+
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              <span className="font-semibold">
+                ${restaurant.deliveryFee.toFixed(2)} delivery
+              </span>
             </div>
           </div>
         </div>
@@ -144,20 +133,13 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
       {/* Search Bar */}
       <div className="mx-auto max-w-3xl px-4 py-6">
         <div className="relative">
-          <Search 
-            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" 
-            style={{ color: colors.text.tertiary }} 
-          />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" />
           <Input
             type="text"
             placeholder="Search menu items..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             className="pl-12 h-12 text-base border-2 shadow-sm"
-            style={{ 
-              borderColor: colors.border.DEFAULT,
-              backgroundColor: colors.background.primary 
-            }}
           />
         </div>
       </div>
@@ -174,13 +156,6 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
                   isActive ? "shadow-md" : ""
                 }`}
                 onClick={() => setSelectedCategory(category)}
-                style={{
-                  backgroundColor: isActive ? colors.primary[600] : colors.background.primary,
-                  color: isActive ? colors.text.inverse : colors.text.primary,
-                  borderColor: isActive ? colors.primary[600] : colors.border.DEFAULT,
-                  borderWidth: '2px',
-                  borderStyle: 'solid'
-                }}
               >
                 {category}
               </Badge>
@@ -202,25 +177,12 @@ export function CustomerMenu({ restaurant, menuItems }: CustomerMenuProps) {
         ))}
 
         {filteredItems.length === 0 ? (
-          <div 
-            className="py-16 text-center rounded-xl border-2"
-            style={{ 
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light 
-            }}
-          >
-            <div 
-              className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full"
-              style={{ backgroundColor: colors.neutral[100] }}
-            >
-              <Search className="h-10 w-10" style={{ color: colors.text.tertiary }} />
+          <div className="py-16 text-center rounded-xl border-2">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full">
+              <Search className="h-10 w-10" />
             </div>
-            <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-              No items found
-            </p>
-            <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-              Try a different search or category
-            </p>
+            <p className="text-lg font-semibold">No items found</p>
+            <p className="text-sm mt-1">Try a different search or category</p>
           </div>
         ) : null}
       </div>

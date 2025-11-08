@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -65,45 +65,45 @@ export default function TableOrderPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
+          { credentials: "include" },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setOrder(data.order);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load order");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchMenuItems = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/public/restaurant/${restaurantName}`,
+          { credentials: "include" },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setMenuItems(data.restaurant.menuItems || []);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load menu");
+      }
+    };
+
     fetchOrder();
     fetchMenuItems();
   }, [restaurantName, tableNumber]);
-
-  const fetchOrder = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
-        { credentials: "include" }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrder(data.order);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load order");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchMenuItems = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/public/restaurant/${restaurantName}`,
-        { credentials: "include" }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setMenuItems(data.restaurant.menuItems || []);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load menu");
-    }
-  };
 
   const handleAddItem = async (menuItemId: string) => {
     try {
@@ -116,7 +116,7 @@ export default function TableOrderPage() {
           },
           body: JSON.stringify({ menuItemId, quantity: 1 }),
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
@@ -143,7 +143,7 @@ export default function TableOrderPage() {
           },
           body: JSON.stringify({ quantity: newQuantity }),
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
@@ -165,7 +165,7 @@ export default function TableOrderPage() {
         {
           method: "DELETE",
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
@@ -181,17 +181,19 @@ export default function TableOrderPage() {
     }
   };
 
-  const categories = ["All", ...Array.from(new Set(menuItems.map(item => item.category)))];
-  const filteredMenuItems = selectedCategory === "All"
-    ? menuItems
-    : menuItems.filter(item => item.category === selectedCategory);
+  const categories = [
+    "All",
+    ...Array.from(new Set(menuItems.map((item) => item.category))),
+  ];
+  const filteredMenuItems =
+    selectedCategory === "All"
+      ? menuItems
+      : menuItems.filter((item) => item.category === selectedCategory);
 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-lg" style={{ color: colors.text.secondary }}>
-          Loading...
-        </p>
+        <p className="text-lg">Loading...</p>
       </div>
     );
   }
@@ -199,37 +201,24 @@ export default function TableOrderPage() {
   if (!order) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-lg" style={{ color: colors.text.secondary }}>
-          Order not found
-        </p>
+        <p className="text-lg">Order not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: colors.background.secondary }}>
+    <div className="min-h-screen pb-24">
       {/* Header */}
-      <div 
-        className="shadow-md border-b-2 sticky top-0 z-10"
-        style={{ 
-          backgroundColor: colors.background.primary,
-          borderColor: colors.border.light 
-        }}
-      >
+      <div className="shadow-md border-b-2 sticky top-0 z-10">
         <div className="mx-auto max-w-4xl px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold" style={{ color: colors.text.primary }}>
-                {order.restaurant.name}
-              </h1>
-              <p className="text-base mt-1" style={{ color: colors.text.secondary }}>
-                Table {order.table.number}
-              </p>
+              <h1 className="text-3xl font-bold">{order.restaurant.name}</h1>
+              <p className="text-base mt-1">Table {order.table.number}</p>
             </div>
             <Button
               onClick={() => setShowMenu(!showMenu)}
               className="text-white font-semibold shadow-md"
-              style={{ backgroundColor: colors.primary[600] }}
             >
               {showMenu ? (
                 <>
@@ -261,13 +250,6 @@ export default function TableOrderPage() {
                     isActive ? "shadow-md" : ""
                   }`}
                   onClick={() => setSelectedCategory(category)}
-                  style={{
-                    backgroundColor: isActive ? colors.primary[600] : colors.background.primary,
-                    color: isActive ? colors.text.inverse : colors.text.primary,
-                    borderColor: isActive ? colors.primary[600] : colors.border.DEFAULT,
-                    borderWidth: '2px',
-                    borderStyle: 'solid'
-                  }}
                 >
                   {category}
                 </Badge>
@@ -278,36 +260,29 @@ export default function TableOrderPage() {
           {/* Menu Items */}
           <div className="space-y-4">
             {filteredMenuItems.map((item) => {
-              const orderItem = order.items.find(oi => oi.menuItemId === item.id);
+              const orderItem = order.items.find(
+                (oi) => oi.menuItemId === item.id,
+              );
               const quantity = orderItem?.quantity || 0;
 
+              if (!orderItem) {
+                return null;
+              }
+
               return (
-                <Card 
+                <Card
                   key={item.id}
                   className="overflow-hidden border-2 transition-all hover:shadow-lg"
-                  style={{ 
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light 
-                  }}
                 >
                   <div className="flex gap-4 p-4">
-                    <div 
-                      className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl shadow-md"
-                      style={{ backgroundColor: colors.neutral[100] }}
-                    >
+                    <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl shadow-md">
                       <ImageWithFallback
                         src={item.image}
                         alt={item.name}
                         className="h-full w-full object-cover"
                       />
                       {item.popular && (
-                        <Badge 
-                          className="absolute left-2 top-2 text-xs font-bold shadow-md"
-                          style={{ 
-                            backgroundColor: colors.primary[600],
-                            color: colors.text.inverse 
-                          }}
-                        >
+                        <Badge className="absolute left-2 top-2 text-xs font-bold shadow-md">
                           Popular
                         </Badge>
                       )}
@@ -316,18 +291,13 @@ export default function TableOrderPage() {
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <h3 className="font-bold text-lg truncate" style={{ color: colors.text.primary }}>
+                          <h3 className="font-bold text-lg truncate">
                             {item.name}
                           </h3>
                           {item.vegetarian && (
                             <Badge
                               variant="outline"
                               className="mt-1 flex items-center gap-1 text-xs font-semibold"
-                              style={{ 
-                                borderColor: colors.success[500],
-                                color: colors.success[600],
-                                backgroundColor: colors.success[50]
-                              }}
                             >
                               Vegetarian
                             </Badge>
@@ -335,12 +305,12 @@ export default function TableOrderPage() {
                         </div>
                       </div>
 
-                      <p className="text-sm line-clamp-2 mb-3" style={{ color: colors.text.secondary }}>
+                      <p className="text-sm line-clamp-2 mb-3">
                         {item.description}
                       </p>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold" style={{ color: colors.primary[600] }}>
+                        <span className="text-xl font-bold">
                           ${item.price.toFixed(2)}
                         </span>
 
@@ -349,7 +319,6 @@ export default function TableOrderPage() {
                             size="sm"
                             onClick={() => handleAddItem(item.id)}
                             className="h-9 px-4 text-white font-semibold shadow-md transition-all hover:shadow-lg"
-                            style={{ backgroundColor: colors.primary[600] }}
                           >
                             <Plus className="mr-1 h-4 w-4" />
                             Add
@@ -359,20 +328,22 @@ export default function TableOrderPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleUpdateQuantity(orderItem.id, quantity - 1)}
+                              onClick={() =>
+                                handleUpdateQuantity(orderItem.id, quantity - 1)
+                              }
                               className="h-9 w-9 p-0 border-2"
-                              style={{ borderColor: colors.border.DEFAULT }}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
-                            <span className="w-8 text-center font-bold text-lg" style={{ color: colors.text.primary }}>
+                            <span className="w-8 text-center font-bold text-lg">
                               {quantity}
                             </span>
                             <Button
                               size="sm"
-                              onClick={() => handleUpdateQuantity(orderItem.id, quantity + 1)}
+                              onClick={() =>
+                                handleUpdateQuantity(orderItem.id, quantity + 1)
+                              }
                               className="h-9 w-9 p-0 text-white shadow-md"
-                              style={{ backgroundColor: colors.primary[600] }}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
@@ -389,51 +360,38 @@ export default function TableOrderPage() {
       ) : (
         /* Bill View */
         <div className="mx-auto max-w-4xl px-4 py-6">
-          <Card 
-            className="border-2 mb-6"
-            style={{ 
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light 
-            }}
-          >
+          <Card className="border-2 mb-6">
             <div className="p-6">
-              <div className="mb-6 pb-4 border-b-2" style={{ borderColor: colors.border.light }}>
-                <h2 className="text-2xl font-bold mb-2" style={{ color: colors.text.primary }}>
-                  Order Summary
-                </h2>
-                <p className="text-sm" style={{ color: colors.text.secondary }}>
-                  {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+              <div className="mb-6 pb-4 border-b-2">
+                <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
+                <p className="text-sm">
+                  {order.items.length}{" "}
+                  {order.items.length === 1 ? "item" : "items"}
                 </p>
               </div>
 
               {order.items.length === 0 ? (
                 <div className="py-8 text-center">
-                  <ShoppingCart className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text.tertiary }} />
-                  <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-                    No items in order
-                  </p>
-                  <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                    Click "Add Items" to start ordering
+                  <ShoppingCart className="h-16 w-16 mx-auto mb-4" />
+                  <p className="text-lg font-semibold">No items in order</p>
+                  <p className="text-sm mt-1">
+                    Click &quot;Add Items&quot; to start ordering
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="space-y-4 mb-6">
                     {order.items.map((item) => (
-                      <div 
+                      <div
                         key={item.id}
                         className="flex items-center justify-between p-4 rounded-lg border-2"
-                        style={{ 
-                          backgroundColor: colors.background.secondary,
-                          borderColor: colors.border.light 
-                        }}
                       >
                         <div className="flex-1">
-                          <h3 className="font-bold text-lg mb-1" style={{ color: colors.text.primary }}>
+                          <h3 className="font-bold text-lg mb-1">
                             {item.name}
                           </h3>
                           <div className="flex items-center gap-4">
-                            <span className="text-sm" style={{ color: colors.text.secondary }}>
+                            <span className="text-sm">
                               ${item.price.toFixed(2)} × {item.quantity}
                             </span>
                           </div>
@@ -443,25 +401,27 @@ export default function TableOrderPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                              onClick={() =>
+                                handleUpdateQuantity(item.id, item.quantity - 1)
+                              }
                               className="h-8 w-8 p-0 border-2"
-                              style={{ borderColor: colors.border.DEFAULT }}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-8 text-center font-bold" style={{ color: colors.text.primary }}>
+                            <span className="w-8 text-center font-bold">
                               {item.quantity}
                             </span>
                             <Button
                               size="sm"
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                              onClick={() =>
+                                handleUpdateQuantity(item.id, item.quantity + 1)
+                              }
                               className="h-8 w-8 p-0 text-white"
-                              style={{ backgroundColor: colors.primary[600] }}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
-                          <span className="text-lg font-bold w-24 text-right" style={{ color: colors.text.primary }}>
+                          <span className="text-lg font-bold w-24 text-right">
                             ${item.subtotal.toFixed(2)}
                           </span>
                           <Button
@@ -469,10 +429,6 @@ export default function TableOrderPage() {
                             variant="outline"
                             onClick={() => handleRemoveItem(item.id)}
                             className="h-8 w-8 p-0 border-2 hover:bg-red-50"
-                            style={{ 
-                              borderColor: colors.danger[300],
-                              color: colors.danger[600] 
-                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -481,22 +437,22 @@ export default function TableOrderPage() {
                     ))}
                   </div>
 
-                  <div className="space-y-3 pt-4 border-t-2" style={{ borderColor: colors.border.light }}>
+                  <div className="space-y-3 pt-4 border-t-2">
                     <div className="flex justify-between text-base">
-                      <span style={{ color: colors.text.secondary }}>Subtotal:</span>
-                      <span className="font-semibold" style={{ color: colors.text.primary }}>
+                      <span>Subtotal:</span>
+                      <span className="font-semibold">
                         ${order.subtotal.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-base">
-                      <span style={{ color: colors.text.secondary }}>Tax (10%):</span>
-                      <span className="font-semibold" style={{ color: colors.text.primary }}>
+                      <span>Tax (10%):</span>
+                      <span className="font-semibold">
                         ${order.tax.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xl pt-2 border-t-2" style={{ borderColor: colors.border.light }}>
-                      <span className="font-bold" style={{ color: colors.text.primary }}>Total:</span>
-                      <span className="font-bold" style={{ color: colors.primary[600] }}>
+                    <div className="flex justify-between text-xl pt-2 border-t-2">
+                      <span className="font-bold">Total:</span>
+                      <span className="font-bold">
                         ${order.total.toFixed(2)}
                       </span>
                     </div>
@@ -510,4 +466,3 @@ export default function TableOrderPage() {
     </div>
   );
 }
-

@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { Loader2, Save, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -41,13 +40,15 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
       popular: false,
       vegetarian: false,
       available: true,
-    }
+    },
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value, type } = event.target;
-    
+
     if (type === "checkbox") {
       const checked = (event.target as HTMLInputElement).checked;
       setFormState((prev) => ({ ...prev, [name]: checked }));
@@ -61,7 +62,12 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!formState.name || !formState.description || !formState.image || !formState.category) {
+    if (
+      !formState.name ||
+      !formState.description ||
+      !formState.image ||
+      !formState.category
+    ) {
       toast.error("All fields are required.");
       return;
     }
@@ -77,7 +83,7 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
       const url = item?.id
         ? `${API_BASE_URL}/api/menu/${item.id}`
         : `${API_BASE_URL}/api/menu`;
-      
+
       const method = item?.id ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -107,15 +113,9 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
   };
 
   return (
-    <Card 
-      className="border-2"
-      style={{ 
-        backgroundColor: colors.background.primary,
-        borderColor: colors.border.light 
-      }}
-    >
+    <Card className="border-2">
       <CardHeader>
-        <CardTitle style={{ color: colors.text.primary }}>
+        <CardTitle>
           {item?.id ? "Edit Menu Item" : "Add New Menu Item"}
         </CardTitle>
       </CardHeader>
@@ -123,7 +123,7 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="name" className="text-sm font-semibold">
                 Item Name *
               </label>
               <Input
@@ -135,15 +135,11 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="category" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="category" className="text-sm font-semibold">
                 Category *
               </label>
               <Input
@@ -155,16 +151,12 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+            <label htmlFor="description" className="text-sm font-semibold">
               Description *
             </label>
             <textarea
@@ -177,17 +169,12 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
               disabled={isSubmitting}
               required
               className="w-full rounded-md border px-3 py-2 text-sm"
-              style={{ 
-                borderColor: colors.border.DEFAULT,
-                backgroundColor: colors.background.primary,
-                color: colors.text.primary
-              }}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="price" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="price" className="text-sm font-semibold">
                 Price ($) *
               </label>
               <Input
@@ -201,19 +188,15 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="image" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="image" className="text-sm font-semibold">
                 Image URL *
               </label>
               <div className="relative">
-                <ImageIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+                <ImageIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
                 <Input
                   id="image"
                   name="image"
@@ -224,10 +207,6 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                   disabled={isSubmitting}
                   className="pl-10"
                   required
-                  style={{ 
-                    borderColor: colors.border.DEFAULT,
-                    backgroundColor: colors.background.primary 
-                  }}
                 />
               </div>
             </div>
@@ -242,11 +221,8 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 className="h-5 w-5 rounded"
-                style={{ accentColor: colors.primary[600] }}
               />
-              <span className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                Popular Item
-              </span>
+              <span className="text-sm font-semibold">Popular Item</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer">
@@ -257,11 +233,8 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 className="h-5 w-5 rounded"
-                style={{ accentColor: colors.success[600] }}
               />
-              <span className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                Vegetarian
-              </span>
+              <span className="text-sm font-semibold">Vegetarian</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer">
@@ -272,11 +245,8 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 className="h-5 w-5 rounded"
-                style={{ accentColor: colors.secondary[600] }}
               />
-              <span className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                Available
-              </span>
+              <span className="text-sm font-semibold">Available</span>
             </label>
           </div>
 
@@ -285,7 +255,6 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
               type="submit"
               className="flex-1 text-white font-semibold"
               disabled={isSubmitting}
-              style={{ backgroundColor: colors.primary[600] }}
             >
               {isSubmitting ? (
                 <>
@@ -304,7 +273,6 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
-              style={{ borderColor: colors.border.DEFAULT }}
             >
               Cancel
             </Button>
@@ -314,4 +282,3 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
     </Card>
   );
 }
-

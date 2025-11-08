@@ -1,14 +1,19 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Store, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -73,19 +78,16 @@ export function CreateRestaurantForm() {
 
   return (
     <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-lg border-2 shadow-2xl" style={{ backgroundColor: colors.background.primary, borderColor: colors.border.light }}>
+      <Card className="w-full max-w-lg border-2 shadow-2xl">
         <CardHeader className="text-center space-y-4">
-          <div 
-            className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl shadow-xl"
-            style={{ backgroundColor: colors.primary[600] }}
-          >
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl shadow-xl">
             <Store className="h-12 w-12 text-white" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-bold" style={{ color: colors.text.primary }}>
+            <CardTitle className="text-3xl font-bold">
               Create Your Restaurant
             </CardTitle>
-            <CardDescription className="text-base mt-2" style={{ color: colors.text.secondary }}>
+            <CardDescription className="text-base mt-2">
               Set up your restaurant profile to start managing orders and menus
             </CardDescription>
           </div>
@@ -93,11 +95,11 @@ export function CreateRestaurantForm() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="name" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="name" className="block text-sm font-semibold">
                 Restaurant Name
               </label>
               <div className="relative">
-                <UtensilsCrossed className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+                <UtensilsCrossed className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
                 <Input
                   id="name"
                   name="name"
@@ -107,17 +109,13 @@ export function CreateRestaurantForm() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                   className="pl-10"
-                  style={{ 
-                    borderColor: colors.border.DEFAULT,
-                    backgroundColor: colors.background.primary 
-                  }}
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="cuisine" className="block text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="cuisine" className="block text-sm font-semibold">
                 Cuisine Type
               </label>
               <Input
@@ -128,10 +126,6 @@ export function CreateRestaurantForm() {
                 value={formState.cuisine}
                 onChange={handleChange}
                 disabled={isSubmitting}
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
                 required
               />
             </div>
@@ -140,7 +134,6 @@ export function CreateRestaurantForm() {
               type="submit"
               className="w-full text-white transition-all hover:shadow-xl"
               disabled={isSubmitting}
-              style={{ backgroundColor: colors.primary[600] }}
             >
               {isSubmitting ? (
                 <>

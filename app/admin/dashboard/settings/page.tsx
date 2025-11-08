@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -60,7 +60,9 @@ export default function RestaurantSettingsPage() {
     fetchRestaurant();
   }, []);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = event.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
@@ -105,9 +107,7 @@ export default function RestaurantSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <p className="text-lg" style={{ color: colors.text.secondary }}>
-          Loading restaurant details...
-        </p>
+        <p className="text-lg">Loading restaurant details...</p>
       </div>
     );
   }
@@ -115,25 +115,12 @@ export default function RestaurantSettingsPage() {
   if (!restaurant) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <Card 
-          className="p-8 text-center border-2 max-w-md"
-          style={{ 
-            backgroundColor: colors.background.primary,
-            borderColor: colors.border.light 
-          }}
-        >
-          <div 
-            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.neutral[100] }}
-          >
-            <Store className="h-8 w-8" style={{ color: colors.text.tertiary }} />
+        <Card className="p-8 text-center border-2 max-w-md">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <Store className="h-8 w-8" />
           </div>
-          <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-            No Restaurant Found
-          </p>
-          <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-            Please create a restaurant first
-          </p>
+          <p className="text-lg font-semibold">No Restaurant Found</p>
+          <p className="text-sm mt-1">Please create a restaurant first</p>
         </Card>
       </div>
     );
@@ -142,34 +129,22 @@ export default function RestaurantSettingsPage() {
   return (
     <div className="p-6 max-w-3xl">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-          Restaurant Settings
-        </h2>
-        <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-          Manage your restaurant information
-        </p>
+        <h2 className="text-2xl font-bold">Restaurant Settings</h2>
+        <p className="text-sm mt-1">Manage your restaurant information</p>
       </div>
 
-      <Card 
-        className="border-2"
-        style={{ 
-          backgroundColor: colors.background.primary,
-          borderColor: colors.border.light 
-        }}
-      >
+      <Card className="border-2">
         <CardHeader>
-          <CardTitle style={{ color: colors.text.primary }}>
-            Restaurant Details
-          </CardTitle>
+          <CardTitle>Restaurant Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="name" className="text-sm font-semibold">
                 Restaurant Name *
               </label>
               <div className="relative">
-                <Store className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: colors.text.tertiary }} />
+                <Store className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
                 <Input
                   id="name"
                   name="name"
@@ -180,16 +155,12 @@ export default function RestaurantSettingsPage() {
                   disabled={isSubmitting}
                   className="pl-10"
                   required
-                  style={{ 
-                    borderColor: colors.border.DEFAULT,
-                    backgroundColor: colors.background.primary 
-                  }}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="cuisine" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="cuisine" className="text-sm font-semibold">
                 Cuisine Type *
               </label>
               <Input
@@ -201,15 +172,11 @@ export default function RestaurantSettingsPage() {
                 onChange={handleChange}
                 disabled={isSubmitting}
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary 
-                }}
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="status" className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <label htmlFor="status" className="text-sm font-semibold">
                 Status *
               </label>
               <select
@@ -220,11 +187,6 @@ export default function RestaurantSettingsPage() {
                 disabled={isSubmitting}
                 className="w-full h-9 rounded-md border px-3 py-1 text-sm"
                 required
-                style={{ 
-                  borderColor: colors.border.DEFAULT,
-                  backgroundColor: colors.background.primary,
-                  color: colors.text.primary
-                }}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -236,7 +198,6 @@ export default function RestaurantSettingsPage() {
                 type="submit"
                 className="w-full text-white font-semibold"
                 disabled={isSubmitting}
-                style={{ backgroundColor: colors.primary[600] }}
               >
                 {isSubmitting ? (
                   <>
@@ -255,40 +216,21 @@ export default function RestaurantSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card 
-        className="mt-6 border-2"
-        style={{ 
-          backgroundColor: colors.background.primary,
-          borderColor: colors.border.light 
-        }}
-      >
+      <Card className="mt-6 border-2">
         <CardHeader>
-          <CardTitle style={{ color: colors.text.primary }}>
-            Restaurant Information
-          </CardTitle>
+          <CardTitle>Restaurant Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex justify-between py-3 border-b" style={{ borderColor: colors.border.light }}>
-              <span className="font-semibold" style={{ color: colors.text.secondary }}>
-                Restaurant ID
-              </span>
-              <span className="font-mono text-sm" style={{ color: colors.text.primary }}>
-                {restaurant.id}
-              </span>
+            <div className="flex justify-between py-3 border-b">
+              <span className="font-semibold">Restaurant ID</span>
+              <span className="font-mono text-sm">{restaurant.id}</span>
             </div>
-            <div className="flex justify-between py-3 border-b" style={{ borderColor: colors.border.light }}>
-              <span className="font-semibold" style={{ color: colors.text.secondary }}>
-                Current Status
-              </span>
-              <span 
-                className="font-semibold px-3 py-1 rounded-full text-sm"
-                style={{ 
-                  backgroundColor: restaurant.status === "active" ? colors.success[100] : colors.neutral[200],
-                  color: restaurant.status === "active" ? colors.success[700] : colors.neutral[700]
-                }}
-              >
-                {restaurant.status.charAt(0).toUpperCase() + restaurant.status.slice(1)}
+            <div className="flex justify-between py-3 border-b">
+              <span className="font-semibold">Current Status</span>
+              <span className="font-semibold px-3 py-1 rounded-full text-sm">
+                {restaurant.status.charAt(0).toUpperCase() +
+                  restaurant.status.slice(1)}
               </span>
             </div>
           </div>
@@ -297,4 +239,3 @@ export default function RestaurantSettingsPage() {
     </div>
   );
 }
-
