@@ -5,13 +5,16 @@ const MenuItem = require("../models/MenuItem");
 
 const router = express.Router();
 
-// Get restaurant by name (public endpoint)
+// Get restaurant by slug or name (public endpoint)
 router.get("/restaurant/:name", async (req, res) => {
   try {
     const { name } = req.params;
 
     const restaurant = await Restaurant.findOne({
-      name: { $regex: new RegExp(`^${name}$`, "i") },
+      $or: [
+        { slug: name.toLowerCase() },
+        { name: { $regex: new RegExp(`^${name}$`, "i") } },
+      ],
       status: "active",
     }).lean();
 

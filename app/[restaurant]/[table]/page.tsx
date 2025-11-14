@@ -258,104 +258,110 @@ export default function TableOrderPage() {
           </div>
 
           {/* Menu Items */}
-          <div className="space-y-4">
-            {filteredMenuItems.map((item) => {
-              const orderItem = order.items.find(
-                (oi) => oi.menuItemId === item.id,
-              );
-              const quantity = orderItem?.quantity || 0;
+          {filteredMenuItems.length === 0 ? (
+            <div className="py-12 text-center">
+              <ShoppingCart className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-semibold">No menu items available</p>
+              <p className="text-sm mt-1 text-muted-foreground">
+                Menu items will appear here once added by the restaurant.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredMenuItems.map((item) => {
+                const orderItem = order.items.find(
+                  (oi) => oi.menuItemId === item.id,
+                );
+                const quantity = orderItem?.quantity || 0;
 
-              if (!orderItem) {
-                return null;
-              }
+                return (
+                  <Card
+                    key={item.id}
+                    className="overflow-hidden border-2 transition-all hover:shadow-lg"
+                  >
+                    <div className="flex gap-4 p-4">
+                      <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl shadow-md">
+                        <ImageWithFallback
+                          src={item.image}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                        {item.popular && (
+                          <Badge className="absolute left-2 top-2 text-xs font-bold shadow-md">
+                            Popular
+                          </Badge>
+                        )}
+                      </div>
 
-              return (
-                <Card
-                  key={item.id}
-                  className="overflow-hidden border-2 transition-all hover:shadow-lg"
-                >
-                  <div className="flex gap-4 p-4">
-                    <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl shadow-md">
-                      <ImageWithFallback
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
-                      {item.popular && (
-                        <Badge className="absolute left-2 top-2 text-xs font-bold shadow-md">
-                          Popular
-                        </Badge>
-                      )}
-                    </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg truncate">
+                              {item.name}
+                            </h3>
+                            {item.vegetarian && (
+                              <Badge
+                                variant="outline"
+                                className="mt-1 flex items-center gap-1 text-xs font-semibold"
+                              >
+                                Vegetarian
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg truncate">
-                            {item.name}
-                          </h3>
-                          {item.vegetarian && (
-                            <Badge
-                              variant="outline"
-                              className="mt-1 flex items-center gap-1 text-xs font-semibold"
+                        <p className="text-sm line-clamp-2 mb-3">
+                          {item.description}
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-xl font-bold">
+                            ${item.price.toFixed(2)}
+                          </span>
+
+                          {quantity === 0 ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleAddItem(item.id)}
+                              className="h-9 px-4 text-white font-semibold shadow-md transition-all hover:shadow-lg"
                             >
-                              Vegetarian
-                            </Badge>
+                              <Plus className="mr-1 h-4 w-4" />
+                              Add
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  handleUpdateQuantity(orderItem.id, quantity - 1)
+                                }
+                                className="h-9 w-9 p-0 border-2"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center font-bold text-lg">
+                                {quantity}
+                              </span>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateQuantity(orderItem.id, quantity + 1)
+                                }
+                                className="h-9 w-9 p-0 text-white shadow-md"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
-
-                      <p className="text-sm line-clamp-2 mb-3">
-                        {item.description}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold">
-                          ${item.price.toFixed(2)}
-                        </span>
-
-                        {quantity === 0 ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddItem(item.id)}
-                            className="h-9 px-4 text-white font-semibold shadow-md transition-all hover:shadow-lg"
-                          >
-                            <Plus className="mr-1 h-4 w-4" />
-                            Add
-                          </Button>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                handleUpdateQuantity(orderItem.id, quantity - 1)
-                              }
-                              className="h-9 w-9 p-0 border-2"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-8 text-center font-bold text-lg">
-                              {quantity}
-                            </span>
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateQuantity(orderItem.id, quantity + 1)
-                              }
-                              className="h-9 w-9 p-0 text-white shadow-md"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         /* Bill View */

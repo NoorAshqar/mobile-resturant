@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ThemeToggleButton } from "@/components/theme-toggle-button";
 
 export default async function AdminDashboardLayout({
   children,
@@ -22,13 +23,16 @@ export default async function AdminDashboardLayout({
 
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Header */}
-        <div className="flex h-20 items-center justify-between border-b-2 px-6 shadow-sm">
+        <header className="flex h-20 items-center justify-between border-b-2 bg-background px-6 shadow-sm">
           <div>
             <h1 className="text-xl font-bold">Restaurant Management</h1>
             <p className="text-sm">Manage your restaurant operations</p>
           </div>
-          <SignOutButton />
-        </div>
+          <div className="flex items-center gap-4">
+            <ThemeToggleButton />
+            <SignOutButton />
+          </div>
+        </header>
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">{children}</main>

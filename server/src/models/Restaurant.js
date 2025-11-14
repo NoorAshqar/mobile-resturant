@@ -18,6 +18,43 @@ const RestaurantSchema = new Schema(
       required: true,
       trim: true,
     },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      unique: true,
+    },
+    logoUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    website: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    openingHours: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["active", "inactive"],

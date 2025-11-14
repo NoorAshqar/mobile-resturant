@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Store } from "lucide-react";
 import { toast } from "sonner";
@@ -18,6 +19,9 @@ interface Restaurant {
   name: string;
   cuisine: string;
   status: "active" | "inactive";
+  slug: string;
+  logoUrl?: string;
+  description?: string;
 }
 
 export default function RestaurantSettingsPage() {
@@ -232,6 +236,43 @@ export default function RestaurantSettingsPage() {
                 {restaurant.status.charAt(0).toUpperCase() +
                   restaurant.status.slice(1)}
               </span>
+            </div>
+            <div className="flex justify-between py-3 border-b">
+              <span className="font-semibold">Restaurant Name</span>
+              <span className="text-sm">{restaurant.name}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b">
+              <span className="font-semibold">Cuisine</span>
+              <span className="text-sm">{restaurant.cuisine}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b">
+              <span className="font-semibold">Slug</span>
+              <span className="font-mono text-sm">
+                {restaurant.slug || "—"}
+              </span>
+            </div>
+            {restaurant.description && (
+              <div className="py-3 border-b">
+                <span className="block font-semibold mb-1">Description</span>
+                <p className="text-sm text-muted-foreground">
+                  {restaurant.description}
+                </p>
+              </div>
+            )}
+            <div className="py-3">
+              <span className="block font-semibold mb-1">
+                Public Ordering Link
+              </span>
+              <Link
+                href={`/${restaurant.slug || restaurant.name}/1`}
+                target="_blank"
+                className="text-sm text-blue-600 underline break-all"
+              >
+                {`/${restaurant.slug || restaurant.name}/1`}
+              </Link>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Share this link or QR for customers to order from table 1.
+              </p>
             </div>
           </div>
         </CardContent>

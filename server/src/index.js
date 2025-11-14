@@ -15,8 +15,11 @@ const publicRoutes = require("./routes/public");
 
 const app = express();
 
-const allowedOrigin =
-  process.env.CLIENT_URL ?? "http://localhost:3000";
+// Normalize client URL to avoid trailing-slash CORS mismatches
+const rawClientUrl = process.env.CLIENT_URL ?? "http://localhost:3000";
+const allowedOrigin = rawClientUrl.endsWith("/")
+  ? rawClientUrl.slice(0, -1)
+  : rawClientUrl;
 
 app.use(
   cors({

@@ -54,14 +54,19 @@ router.get("/admin/list", authMiddleware, async (req, res) => {
   }
 });
 
-// Get order for a table (public endpoint)
+// Get order for a table (public endpoint) by restaurant slug or name
 router.get("/:restaurantName/:tableNumber", async (req, res) => {
   try {
     const { restaurantName, tableNumber } = req.params;
 
-    // Find restaurant by name (case insensitive)
+    // Find restaurant by slug or name (case insensitive)
     const restaurant = await Restaurant.findOne({
-      name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
       status: "active",
     });
 
@@ -156,9 +161,14 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
       return res.status(400).json({ message: "Menu item ID is required." });
     }
 
-    // Find restaurant
+    // Find restaurant by slug or name
     const restaurant = await Restaurant.findOne({
-      name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
       status: "active",
     });
 
@@ -282,9 +292,14 @@ router.put("/:restaurantName/:tableNumber/items/:itemId", async (req, res) => {
       return res.status(400).json({ message: "Valid quantity is required." });
     }
 
-    // Find restaurant
+    // Find restaurant by slug or name
     const restaurant = await Restaurant.findOne({
-      name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
       status: "active",
     });
 
@@ -383,9 +398,14 @@ router.delete("/:restaurantName/:tableNumber/items/:itemId", async (req, res) =>
   try {
     const { restaurantName, tableNumber, itemId } = req.params;
 
-    // Find restaurant
+    // Find restaurant by slug or name
     const restaurant = await Restaurant.findOne({
-      name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
       status: "active",
     });
 
