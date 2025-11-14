@@ -32,6 +32,8 @@ router.get("/", authMiddleware, async (req, res) => {
       rating: restaurant.rating,
       trend: restaurant.trend,
       trendPercentage: restaurant.trendPercentage,
+      themePalette: restaurant.themePalette,
+      themeMode: restaurant.themeMode,
     };
 
     return res.json({ restaurant: data });
@@ -101,6 +103,8 @@ router.post("/restaurant", authMiddleware, async (req, res) => {
       rating: restaurant.rating,
       trend: restaurant.trend,
       trendPercentage: restaurant.trendPercentage,
+      themePalette: restaurant.themePalette,
+      themeMode: restaurant.themeMode,
     };
 
     return res.status(201).json({ restaurant: data });

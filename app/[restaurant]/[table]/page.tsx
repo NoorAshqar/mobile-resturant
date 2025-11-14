@@ -1,68 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useParams } from "next/navigation";
-import { Plus, Minus, Trash2, ShoppingCart, Receipt } from "lucide-react";
+import { Loader2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ImageWithFallback } from "@/components/figma/image-with-fallback";
+import { TableHero } from "@/components/table-order/table-hero";
+import { TableMenuView } from "@/components/table-order/menu-view";
+import { TableOrderSummary } from "@/components/table-order/order-summary";
+import { RestaurantThemeWrapper } from "@/components/table-order/restaurant-theme-wrapper";
+import {
+  type TableOrderDetails,
+  type TableOrderItem,
+} from "@/components/table-order/types";
+import { MenuItemType } from "@/components/menu-item";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
-interface OrderItem {
-  id: string;
-  menuItemId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  subtotal: number;
-}
-
-interface Order {
-  id: string;
-  restaurant: {
-    id: string;
-    name: string;
-    cuisine: string;
-  };
-  table: {
-    id: string;
-    number: number;
-    capacity: number;
-  };
-  items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: string;
-}
-
-interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-  popular?: boolean;
-  vegetarian?: boolean;
-}
+type ActiveView = "menu" | "summary";
 
 export default function TableOrderPage() {
   const params = useParams();
   const restaurantName = params.restaurant as string;
   const tableNumber = params.table as string;
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [showMenu, setShowMenu] = useState(false);
+  const [order, setOrder] = useState<TableOrderDetails | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItemType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [activeView, setActiveView] = useState<ActiveView>("menu");
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -75,6 +47,8 @@ export default function TableOrderPage() {
         if (response.ok) {
           const data = await response.json();
           setOrder(data.order);
+        } else {
+          setOrder(null);
         }
       } catch (error) {
         console.error(error);
@@ -105,6 +79,8 @@ export default function TableOrderPage() {
     fetchMenuItems();
   }, [restaurantName, tableNumber]);
 
+  const isEditableOrder = order?.status === "building";
+
   const handleAddItem = async (menuItemId: string) => {
     try {
       const response = await fetch(
@@ -132,7 +108,19 @@ export default function TableOrderPage() {
     }
   };
 
-  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+  const handleUpdateQuantity = async (
+    itemId: string,
+    newQuantity: number,
+  ) => {
+    if (!order || !isEditableOrder) {
+      toast.error("Order already submitted to kitchen.");
+      return;
+    }
+    if (newQuantity <= 0) {
+      await handleRemoveItem(itemId);
+      return;
+    }
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/items/${itemId}`,
@@ -159,6 +147,10 @@ export default function TableOrderPage() {
   };
 
   const handleRemoveItem = async (itemId: string) => {
+    if (!order || !isEditableOrder) {
+      toast.error("Order already submitted to kitchen.");
+      return;
+    }
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/items/${itemId}`,
@@ -181,294 +173,233 @@ export default function TableOrderPage() {
     }
   };
 
-  const categories = [
+  const categories = useMemo(
+    () => [
     "All",
     ...Array.from(new Set(menuItems.map((item) => item.category))),
-  ];
-  const filteredMenuItems =
-    selectedCategory === "All"
-      ? menuItems
-      : menuItems.filter((item) => item.category === selectedCategory);
+    ],
+    [menuItems],
+  );
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredMenuItems = useMemo(() => {
+    return menuItems.filter((item) => {
+      const matchesCategory =
+        selectedCategory === "All" || item.category === selectedCategory;
+
+      if (!matchesCategory) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return (
+        item.name.toLowerCase().includes(normalizedSearch) ||
+        item.description.toLowerCase().includes(normalizedSearch) ||
+        item.category.toLowerCase().includes(normalizedSearch)
+      );
+    });
+  }, [menuItems, selectedCategory, normalizedSearch]);
+
+  const orderItemsByMenuId = useMemo(
+    () =>
+      new Map(
+        order?.items.map((item) => [item.menuItemId, item as TableOrderItem]) ??
+          [],
+      ),
+    [order],
+  );
+
+  const menuItemsById = useMemo(
+    () => new Map(menuItems.map((item) => [item.id, item])),
+    [menuItems],
+  );
+
+  const totalItems = order
+    ? order.items.reduce((count, item) => count + item.quantity, 0)
+    : 0;
+
+  const scrollToSection = (sectionId: string) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const target = document.getElementById(sectionId);
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleSubmitOrder = async () => {
+    if (!order) {
+      return;
+    }
+
+    if (!isEditableOrder) {
+      toast.info("Order already sent to the kitchen.");
+      return;
+    }
+
+    if (order.items.length === 0) {
+      toast.error("Add at least one item before sending the order.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/submit`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        toast.error(data?.message ?? "Failed to send order.");
+        return;
+      }
+
+      toast.success("Order sent to the kitchen! Add more items anytime.");
+      
+      // Fetch the new empty order for the next round
+      const newOrderResponse = await fetch(
+        `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
+        { credentials: "include" },
+      );
+
+      if (newOrderResponse.ok) {
+        const newOrderData = await newOrderResponse.json();
+        setOrder(newOrderData.order);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to send order. Please try again.");
+    }
+  };
+
+  const handleSummaryQuantityChange = (itemId: string, quantity: number) => {
+    if (!isEditableOrder) {
+      return;
+    }
+    if (quantity <= 0) {
+      handleRemoveItem(itemId);
+      return;
+    }
+    handleUpdateQuantity(itemId, quantity);
+  };
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-lg">Loading...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
+        <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
+        <p className="mt-4 text-lg font-semibold text-slate-800">
+          Getting your table ready
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          We’re pulling the freshest menu and your current order.
+        </p>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p className="text-lg">Order not found</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
+        <ShoppingCart className="mb-4 h-14 w-14 text-orange-400" />
+        <p className="text-2xl font-semibold text-slate-900">
+          We couldn’t find that table
+        </p>
+        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+          Refresh the page or ask a team member to confirm your table code.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="shadow-md border-b-2 sticky top-0 z-10">
-        <div className="mx-auto max-w-4xl px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">{order.restaurant.name}</h1>
-              <p className="text-base mt-1">Table {order.table.number}</p>
-            </div>
-            <Button
-              onClick={() => setShowMenu(!showMenu)}
-              className="text-white font-semibold shadow-md"
+    <RestaurantThemeWrapper
+      themePalette={order.restaurant.themePalette}
+      themeMode={order.restaurant.themeMode}
+    >
+      <div className="min-h-screen bg-background pb-24 text-foreground lg:pb-16">
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          <TableHero
+            restaurantName={order.restaurant.name}
+            cuisine={order.restaurant.cuisine}
+            tableNumber={order.table.number}
+            capacity={order.table.capacity}
+            totalItems={totalItems}
+            status={order.status}
+            onBrowseMenu={() => {
+              setActiveView("menu");
+              scrollToSection("table-menu");
+            }}
+            onReviewOrder={() => {
+              setActiveView("summary");
+              scrollToSection("order-summary");
+            }}
+          />
+
+        <div className="mt-6 flex gap-3 rounded-2xl bg-card/80 p-2 shadow-sm lg:hidden">
+          {[
+            { id: "menu", label: "Menu" },
+            { id: "summary", label: "Your Order" },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveView(id as ActiveView)}
+              className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                activeView === id
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground"
+              }`}
             >
-              {showMenu ? (
-                <>
-                  <Receipt className="mr-2 h-5 w-5" />
-                  View Bill
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add Items
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {showMenu ? (
-        /* Menu View */
-        <div className="mx-auto max-w-4xl px-4 py-6">
-          {/* Categories */}
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-            {categories.map((category) => {
-              const isActive = selectedCategory === category;
-              return (
-                <Badge
-                  key={category}
-                  className={`cursor-pointer whitespace-nowrap px-4 py-2 text-sm font-semibold transition-all hover:shadow-md ${
-                    isActive ? "shadow-md" : ""
-                  }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Badge>
-              );
-            })}
+              {label}
+            </button>
+          ))}
           </div>
 
-          {/* Menu Items */}
-          {filteredMenuItems.length === 0 ? (
-            <div className="py-12 text-center">
-              <ShoppingCart className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-semibold">No menu items available</p>
-              <p className="text-sm mt-1 text-muted-foreground">
-                Menu items will appear here once added by the restaurant.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredMenuItems.map((item) => {
-                const orderItem = order.items.find(
-                  (oi) => oi.menuItemId === item.id,
-                );
-                const quantity = orderItem?.quantity || 0;
-
-                return (
-                  <Card
-                    key={item.id}
-                    className="overflow-hidden border-2 transition-all hover:shadow-lg"
-                  >
-                    <div className="flex gap-4 p-4">
-                      <div className="relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl shadow-md">
-                        <ImageWithFallback
-                          src={item.image}
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                        />
-                        {item.popular && (
-                          <Badge className="absolute left-2 top-2 text-xs font-bold shadow-md">
-                            Popular
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-2 flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg truncate">
-                              {item.name}
-                            </h3>
-                            {item.vegetarian && (
-                              <Badge
-                                variant="outline"
-                                className="mt-1 flex items-center gap-1 text-xs font-semibold"
-                              >
-                                Vegetarian
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        <p className="text-sm line-clamp-2 mb-3">
-                          {item.description}
-                        </p>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-xl font-bold">
-                            ${item.price.toFixed(2)}
-                          </span>
-
-                          {quantity === 0 ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleAddItem(item.id)}
-                              className="h-9 px-4 text-white font-semibold shadow-md transition-all hover:shadow-lg"
-                            >
-                              <Plus className="mr-1 h-4 w-4" />
-                              Add
-                            </Button>
-                          ) : (
-                            <div className="flex items-center gap-3">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleUpdateQuantity(orderItem.id, quantity - 1)
-                                }
-                                className="h-9 w-9 p-0 border-2"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="w-8 text-center font-bold text-lg">
-                                {quantity}
-                              </span>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleUpdateQuantity(orderItem.id, quantity + 1)
-                                }
-                                className="h-9 w-9 p-0 text-white shadow-md"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+        <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+          <div id="table-menu" className="flex-1">
+            <TableMenuView
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              filteredMenuItems={filteredMenuItems}
+              orderItemsByMenuId={orderItemsByMenuId}
+              onAddMenuItem={handleAddItem}
+              onChangeQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              isVisible={activeView === "menu"}
+              canEdit={isEditableOrder}
+            />
                     </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Bill View */
-        <div className="mx-auto max-w-4xl px-4 py-6">
-          <Card className="border-2 mb-6">
-            <div className="p-6">
-              <div className="mb-6 pb-4 border-b-2">
-                <h2 className="text-2xl font-bold mb-2">Order Summary</h2>
-                <p className="text-sm">
-                  {order.items.length}{" "}
-                  {order.items.length === 1 ? "item" : "items"}
-                </p>
-              </div>
 
-              {order.items.length === 0 ? (
-                <div className="py-8 text-center">
-                  <ShoppingCart className="h-16 w-16 mx-auto mb-4" />
-                  <p className="text-lg font-semibold">No items in order</p>
-                  <p className="text-sm mt-1">
-                    Click &quot;Add Items&quot; to start ordering
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-4 mb-6">
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-4 rounded-lg border-2"
-                      >
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg mb-1">
-                            {item.name}
-                          </h3>
-                          <div className="flex items-center gap-4">
-                            <span className="text-sm">
-                              ${item.price.toFixed(2)} × {item.quantity}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                handleUpdateQuantity(item.id, item.quantity - 1)
-                              }
-                              className="h-8 w-8 p-0 border-2"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center font-bold">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateQuantity(item.id, item.quantity + 1)
-                              }
-                              className="h-8 w-8 p-0 text-white"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <span className="text-lg font-bold w-24 text-right">
-                            ${item.subtotal.toFixed(2)}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="h-8 w-8 p-0 border-2 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+          <div id="order-summary">
+            <TableOrderSummary
+              order={order}
+              menuItemsById={menuItemsById}
+              isVisible={activeView === "summary"}
+              canEdit={isEditableOrder}
+              onUpdateQuantity={handleSummaryQuantityChange}
+              onRemoveItem={handleRemoveItem}
+              onResumeOrdering={() => {
+                setActiveView("menu");
+                scrollToSection("table-menu");
+              }}
+              onSubmitOrder={handleSubmitOrder}
+              restaurantName={restaurantName}
+              tableNumber={tableNumber}
+            />
                       </div>
-                    ))}
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t-2">
-                    <div className="flex justify-between text-base">
-                      <span>Subtotal:</span>
-                      <span className="font-semibold">
-                        ${order.subtotal.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-base">
-                      <span>Tax (10%):</span>
-                      <span className="font-semibold">
-                        ${order.tax.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xl pt-2 border-t-2">
-                      <span className="font-bold">Total:</span>
-                      <span className="font-bold">
-                        ${order.total.toFixed(2)}
-                      </span>
                     </div>
                   </div>
-                </>
-              )}
-            </div>
-          </Card>
-        </div>
-      )}
-    </div>
+          </div>
+    </RestaurantThemeWrapper>
   );
 }

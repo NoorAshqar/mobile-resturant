@@ -8,6 +8,74 @@ const Order = require("../models/Order");
 
 const router = express.Router();
 
+const EDITABLE_STATUS = "building";
+const LEGACY_ACTIVE_STATUS = "active";
+const SUBMITTED_STATUS = "submitted";
+const VIEWABLE_STATUSES = [EDITABLE_STATUS, SUBMITTED_STATUS, LEGACY_ACTIVE_STATUS];
+const EDITABLE_QUERY_STATUSES = [EDITABLE_STATUS, LEGACY_ACTIVE_STATUS];
+const NON_EDITABLE_VIEWABLE_STATUSES = VIEWABLE_STATUSES.filter(
+  (status) => !EDITABLE_QUERY_STATUSES.includes(status),
+);
+const TAX_RATE = 0.1;
+
+function calculateTotals(order) {
+  const subtotal = order.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  order.subtotal = subtotal;
+  order.tax = subtotal * TAX_RATE;
+  order.total = order.subtotal + order.tax;
+}
+
+function formatOrderResponse(order, restaurant, table) {
+  return {
+    id: order._id.toString(),
+    restaurant: {
+      id: restaurant._id.toString(),
+      name: restaurant.name,
+      cuisine: restaurant.cuisine,
+      themePalette: restaurant.themePalette,
+      themeMode: restaurant.themeMode,
+    },
+    table: {
+      id: table._id.toString(),
+      number: table.number,
+      capacity: table.capacity,
+    },
+    items: order.items.map((item) => ({
+      id: item._id.toString(),
+      menuItemId: item.menuItem.toString(),
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      subtotal: item.price * item.quantity,
+    })),
+    subtotal: order.subtotal,
+    tax: order.tax,
+    total: order.total,
+    status: order.status,
+    paid: order.paid || false,
+    paidAt: order.paidAt,
+    createdAt: order.createdAt,
+    submittedAt: order.submittedAt,
+    sessionKey: order.sessionKey,
+    updatedAt: order.updatedAt,
+  };
+}
+
+function normalizeEditableStatus(order) {
+  if (order && order.status === LEGACY_ACTIVE_STATUS) {
+    order.status = EDITABLE_STATUS;
+  }
+}
+
+function ensureSessionKey(order, defaultKey) {
+  if (!order.sessionKey) {
+    order.sessionKey = defaultKey ?? new Date().toISOString();
+  }
+}
+
 // Get all orders for admin's restaurant
 router.get("/admin/list", authMiddleware, async (req, res) => {
   try {
@@ -54,6 +122,173 @@ router.get("/admin/list", authMiddleware, async (req, res) => {
   }
 });
 
+// Get orders by session key
+router.get("/:restaurantName/:tableNumber/session/:sessionKey", async (req, res) => {
+  try {
+    const { restaurantName, tableNumber, sessionKey } = req.params;
+
+    const restaurant = await Restaurant.findOne({
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
+      status: "active",
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const table = await Table.findOne({
+      restaurant: restaurant._id,
+      number: parseInt(tableNumber),
+    });
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found." });
+    }
+
+    // Get all submitted unpaid orders for this session
+    const orders = await Order.find({
+      restaurant: restaurant._id,
+      table: table._id,
+      sessionKey: sessionKey,
+      status: SUBMITTED_STATUS,
+      paid: false,
+    })
+      .sort({ submittedAt: 1 })
+      .lean();
+
+    const formattedOrders = orders.map((order) => ({
+      id: order._id.toString(),
+      items: order.items.map((item) => ({
+        id: item._id.toString(),
+        menuItemId: item.menuItem.toString(),
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        subtotal: item.price * item.quantity,
+      })),
+      subtotal: order.subtotal,
+      tax: order.tax,
+      total: order.total,
+      status: order.status,
+      paid: order.paid,
+      submittedAt: order.submittedAt,
+      createdAt: order.createdAt,
+    }));
+
+    return res.json({ orders: formattedOrders });
+  } catch (error) {
+    console.error("[ORDER_SESSION_ERROR]", error);
+    return res.status(500).json({ message: "Failed to load session orders." });
+  }
+});
+
+// Get order history for a table (all submitted unpaid orders grouped by session)
+router.get("/:restaurantName/:tableNumber/history", async (req, res) => {
+  try {
+    const { restaurantName, tableNumber } = req.params;
+
+    const restaurant = await Restaurant.findOne({
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
+      status: "active",
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const table = await Table.findOne({
+      restaurant: restaurant._id,
+      number: parseInt(tableNumber),
+    });
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found." });
+    }
+
+    // Get all submitted unpaid orders for this table
+    const orders = await Order.find({
+      restaurant: restaurant._id,
+      table: table._id,
+      status: SUBMITTED_STATUS,
+      paid: false,
+    })
+      .sort({ submittedAt: -1 })
+      .lean();
+
+    // Group orders by sessionKey
+    const sessionMap = new Map();
+    
+    orders.forEach((order) => {
+      const key = order.sessionKey || "unknown";
+      if (!sessionMap.has(key)) {
+        sessionMap.set(key, {
+          sessionKey: key,
+          orders: [],
+          totalAmount: 0,
+          firstSubmittedAt: order.submittedAt,
+          lastSubmittedAt: order.submittedAt,
+        });
+      }
+      
+      const session = sessionMap.get(key);
+      session.orders.push({
+        id: order._id.toString(),
+        items: order.items.map((item) => ({
+          id: item._id.toString(),
+          menuItemId: item.menuItem.toString(),
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity,
+        })),
+        subtotal: order.subtotal,
+        tax: order.tax,
+        total: order.total,
+        status: order.status,
+        paid: order.paid,
+        submittedAt: order.submittedAt,
+        createdAt: order.createdAt,
+      });
+      
+      session.totalAmount += order.total;
+      
+      if (order.submittedAt < session.firstSubmittedAt) {
+        session.firstSubmittedAt = order.submittedAt;
+      }
+      if (order.submittedAt > session.lastSubmittedAt) {
+        session.lastSubmittedAt = order.submittedAt;
+      }
+    });
+
+    // Convert map to array and sort by most recent session
+    const sessions = Array.from(sessionMap.values()).sort(
+      (a, b) => new Date(b.lastSubmittedAt) - new Date(a.lastSubmittedAt)
+    );
+
+    // Calculate grand total
+    const grandTotal = sessions.reduce((sum, session) => sum + session.totalAmount, 0);
+
+    return res.json({ 
+      sessions,
+      grandTotal,
+      orderCount: orders.length,
+    });
+  } catch (error) {
+    console.error("[ORDER_HISTORY_ERROR]", error);
+    return res.status(500).json({ message: "Failed to load order history." });
+  }
+});
+
 // Get order for a table (public endpoint) by restaurant slug or name
 router.get("/:restaurantName/:tableNumber", async (req, res) => {
   try {
@@ -84,67 +319,44 @@ router.get("/:restaurantName/:tableNumber", async (req, res) => {
       return res.status(404).json({ message: "Table not found." });
     }
 
-    // Find or create active order for this table
+    // Always look for or create a "building" order
     let order = await Order.findOne({
       restaurant: restaurant._id,
       table: table._id,
-      status: "active",
+      status: { $in: EDITABLE_QUERY_STATUSES },
     }).populate("items.menuItem");
 
+    // If no building order exists, create a new one
     if (!order) {
+      // Check if there are any recent submitted orders to use the same sessionKey
+      const recentSubmittedOrder = await Order.findOne({
+        restaurant: restaurant._id,
+        table: table._id,
+        status: SUBMITTED_STATUS,
+        paid: false,
+      })
+        .sort({ submittedAt: -1 })
+        .lean();
+
+      const sessionKey = recentSubmittedOrder?.sessionKey || new Date().toISOString();
+
       order = await Order.create({
         restaurant: restaurant._id,
         table: table._id,
         tableNumber: table.number,
         items: [],
-        subtotal: 0,
-        tax: 0,
-        total: 0,
+        sessionKey: sessionKey,
       });
+    } else {
+      normalizeEditableStatus(order);
+      ensureSessionKey(order);
+      calculateTotals(order);
+      await order.save();
     }
 
-    // Calculate totals
-    const subtotal = order.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const tax = subtotal * 0.1; // 10% tax
-    const total = subtotal + tax;
-
-    order.subtotal = subtotal;
-    order.tax = tax;
-    order.total = total;
-    await order.save();
-
-    const data = {
-      id: order._id.toString(),
-      restaurant: {
-        id: restaurant._id.toString(),
-        name: restaurant.name,
-        cuisine: restaurant.cuisine,
-      },
-      table: {
-        id: table._id.toString(),
-        number: table.number,
-        capacity: table.capacity,
-      },
-      items: order.items.map((item) => ({
-        id: item._id.toString(),
-        menuItemId: item.menuItem.toString(),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal: order.subtotal,
-      tax: order.tax,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    };
-
-    return res.json({ order: data });
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
   } catch (error) {
     console.error("[ORDER_GET_ERROR]", error);
     return res.status(500).json({ message: "Failed to load order." });
@@ -197,23 +409,37 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
       return res.status(404).json({ message: "Menu item not found or unavailable." });
     }
 
-    // Find or create active order
+    // Find or create editable order
     let order = await Order.findOne({
       restaurant: restaurant._id,
       table: table._id,
-      status: "active",
+      status: { $in: EDITABLE_QUERY_STATUSES },
     });
 
     if (!order) {
+      const latestSubmitted = await Order.findOne({
+        restaurant: restaurant._id,
+        table: table._id,
+        status: SUBMITTED_STATUS,
+      })
+        .sort({ submittedAt: -1, updatedAt: -1 })
+        .lean();
+
+      const sessionKeyCandidate =
+        latestSubmitted?.sessionKey ??
+        latestSubmitted?.submittedAt?.toISOString() ??
+        new Date().toISOString();
+
       order = await Order.create({
         restaurant: restaurant._id,
         table: table._id,
         tableNumber: table.number,
         items: [],
-        subtotal: 0,
-        tax: 0,
-        total: 0,
+        sessionKey: sessionKeyCandidate,
       });
+    } else {
+      normalizeEditableStatus(order);
+      ensureSessionKey(order);
     }
 
     // Check if item already exists in order
@@ -234,48 +460,13 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
       });
     }
 
-    // Calculate totals
-    const subtotal = order.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const tax = subtotal * 0.1;
-    const total = subtotal + tax;
-
-    order.subtotal = subtotal;
-    order.tax = tax;
-    order.total = total;
+    calculateTotals(order);
+    ensureSessionKey(order);
     await order.save();
 
-    const data = {
-      id: order._id.toString(),
-      restaurant: {
-        id: restaurant._id.toString(),
-        name: restaurant.name,
-        cuisine: restaurant.cuisine,
-      },
-      table: {
-        id: table._id.toString(),
-        number: table.number,
-        capacity: table.capacity,
-      },
-      items: order.items.map((item) => ({
-        id: item._id.toString(),
-        menuItemId: item.menuItem.toString(),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal: order.subtotal,
-      tax: order.tax,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    };
-
-    return res.json({ order: data });
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
   } catch (error) {
     console.error("[ORDER_ADD_ITEM_ERROR]", error);
     return res.status(500).json({ message: "Failed to add item to order." });
@@ -321,12 +512,24 @@ router.put("/:restaurantName/:tableNumber/items/:itemId", async (req, res) => {
     const order = await Order.findOne({
       restaurant: restaurant._id,
       table: table._id,
-      status: "active",
+      status: { $in: EDITABLE_QUERY_STATUSES },
     });
 
     if (!order) {
+      const submittedExists = await Order.exists({
+        restaurant: restaurant._id,
+        table: table._id,
+        status: SUBMITTED_STATUS,
+      });
+      if (submittedExists) {
+        return res
+          .status(409)
+          .json({ message: "Order has already been submitted." });
+      }
       return res.status(404).json({ message: "Order not found." });
     }
+
+    normalizeEditableStatus(order);
 
     // Find item
     const itemIndex = order.items.findIndex(
@@ -345,48 +548,12 @@ router.put("/:restaurantName/:tableNumber/items/:itemId", async (req, res) => {
       order.items[itemIndex].quantity = parseInt(quantity);
     }
 
-    // Calculate totals
-    const subtotal = order.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const tax = subtotal * 0.1;
-    const total = subtotal + tax;
-
-    order.subtotal = subtotal;
-    order.tax = tax;
-    order.total = total;
+    calculateTotals(order);
     await order.save();
 
-    const data = {
-      id: order._id.toString(),
-      restaurant: {
-        id: restaurant._id.toString(),
-        name: restaurant.name,
-        cuisine: restaurant.cuisine,
-      },
-      table: {
-        id: table._id.toString(),
-        number: table.number,
-        capacity: table.capacity,
-      },
-      items: order.items.map((item) => ({
-        id: item._id.toString(),
-        menuItemId: item.menuItem.toString(),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal: order.subtotal,
-      tax: order.tax,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    };
-
-    return res.json({ order: data });
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
   } catch (error) {
     console.error("[ORDER_UPDATE_ITEM_ERROR]", error);
     return res.status(500).json({ message: "Failed to update item in order." });
@@ -427,65 +594,102 @@ router.delete("/:restaurantName/:tableNumber/items/:itemId", async (req, res) =>
     const order = await Order.findOne({
       restaurant: restaurant._id,
       table: table._id,
-      status: "active",
+      status: { $in: EDITABLE_QUERY_STATUSES },
     });
 
     if (!order) {
+      const submittedExists = await Order.exists({
+        restaurant: restaurant._id,
+        table: table._id,
+        status: SUBMITTED_STATUS,
+      });
+      if (submittedExists) {
+        return res
+          .status(409)
+          .json({ message: "Order has already been submitted." });
+      }
       return res.status(404).json({ message: "Order not found." });
     }
+
+    normalizeEditableStatus(order);
 
     // Remove item
     order.items = order.items.filter(
       (item) => item._id.toString() !== itemId
     );
 
-    // Calculate totals
-    const subtotal = order.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const tax = subtotal * 0.1;
-    const total = subtotal + tax;
-
-    order.subtotal = subtotal;
-    order.tax = tax;
-    order.total = total;
+    calculateTotals(order);
     await order.save();
 
-    const data = {
-      id: order._id.toString(),
-      restaurant: {
-        id: restaurant._id.toString(),
-        name: restaurant.name,
-        cuisine: restaurant.cuisine,
-      },
-      table: {
-        id: table._id.toString(),
-        number: table.number,
-        capacity: table.capacity,
-      },
-      items: order.items.map((item) => ({
-        id: item._id.toString(),
-        menuItemId: item.menuItem.toString(),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal: order.subtotal,
-      tax: order.tax,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-    };
-
-    return res.json({ order: data });
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
   } catch (error) {
     console.error("[ORDER_REMOVE_ITEM_ERROR]", error);
     return res.status(500).json({ message: "Failed to remove item from order." });
   }
 });
 
-module.exports = router;
+router.post("/:restaurantName/:tableNumber/submit", async (req, res) => {
+  try {
+    const { restaurantName, tableNumber } = req.params;
 
+    const restaurant = await Restaurant.findOne({
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        {
+          name: { $regex: new RegExp(`^${restaurantName}$`, "i") },
+        },
+      ],
+      status: "active",
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const table = await Table.findOne({
+      restaurant: restaurant._id,
+      number: parseInt(tableNumber),
+    });
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found." });
+    }
+
+    const order = await Order.findOne({
+      restaurant: restaurant._id,
+      table: table._id,
+      status: { $in: EDITABLE_QUERY_STATUSES },
+    });
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ message: "No open order found to submit." });
+    }
+
+    normalizeEditableStatus(order);
+
+    if (order.items.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Add at least one item before submitting." });
+    }
+
+    calculateTotals(order);
+    ensureSessionKey(order);
+    order.status = SUBMITTED_STATUS;
+    order.submittedAt = new Date();
+    await order.save();
+
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
+  } catch (error) {
+    console.error("[ORDER_SUBMIT_ERROR]", error);
+    return res.status(500).json({ message: "Failed to submit order." });
+  }
+});
+
+module.exports = router;

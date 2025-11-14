@@ -10,6 +10,7 @@ import { colors } from "@/config/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemePreferencesPanel } from "@/components/admin/theme-preferences";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -22,6 +23,8 @@ interface Restaurant {
   slug: string;
   logoUrl?: string;
   description?: string;
+  themePalette?: string;
+  themeMode?: "light" | "dark";
 }
 
 export default function RestaurantSettingsPage() {
@@ -219,6 +222,11 @@ export default function RestaurantSettingsPage() {
           </form>
         </CardContent>
       </Card>
+
+      <ThemePreferencesPanel
+        palette={restaurant?.themePalette ?? null}
+        mode={restaurant?.themeMode ?? null}
+      />
 
       <Card className="mt-6 border-2">
         <CardHeader>

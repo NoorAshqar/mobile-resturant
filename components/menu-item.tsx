@@ -23,9 +23,30 @@ interface MenuItemProps {
   quantity: number;
   onAdd: () => void;
   onRemove: () => void;
+  disabled?: boolean;
 }
 
-export function MenuItem({ item, quantity, onAdd, onRemove }: MenuItemProps) {
+export function MenuItem({
+  item,
+  quantity,
+  onAdd,
+  onRemove,
+  disabled = false,
+}: MenuItemProps) {
+  const handleAdd = () => {
+    if (disabled) {
+      return;
+    }
+    onAdd();
+  };
+
+  const handleRemove = () => {
+    if (disabled) {
+      return;
+    }
+    onRemove();
+  };
+
   return (
     <Card className="overflow-hidden border-2 transition-all hover:shadow-lg">
       <div className="flex gap-4 p-4">
@@ -66,7 +87,8 @@ export function MenuItem({ item, quantity, onAdd, onRemove }: MenuItemProps) {
             {quantity === 0 ? (
               <Button
                 size="sm"
-                onClick={onAdd}
+                onClick={handleAdd}
+                disabled={disabled}
                 className="h-9 px-4 text-white font-semibold shadow-md transition-all hover:shadow-lg"
               >
                 <Plus className="mr-1 h-4 w-4" />
@@ -77,7 +99,8 @@ export function MenuItem({ item, quantity, onAdd, onRemove }: MenuItemProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={onRemove}
+                  onClick={handleRemove}
+                  disabled={disabled}
                   className="h-9 w-9 p-0 border-2"
                 >
                   <Minus className="h-4 w-4" />
@@ -87,7 +110,8 @@ export function MenuItem({ item, quantity, onAdd, onRemove }: MenuItemProps) {
                 </span>
                 <Button
                   size="sm"
-                  onClick={onAdd}
+                  onClick={handleAdd}
+                  disabled={disabled}
                   className="h-9 w-9 p-0 text-white shadow-md"
                 >
                   <Plus className="h-4 w-4" />

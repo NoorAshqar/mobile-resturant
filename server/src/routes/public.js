@@ -35,6 +35,8 @@ router.get("/restaurant/:name", async (req, res) => {
       cuisine: restaurant.cuisine,
       status: restaurant.status,
       rating: restaurant.rating,
+      themePalette: restaurant.themePalette,
+      themeMode: restaurant.themeMode,
       menuItems: menuItems.map((item) => ({
         id: item._id.toString(),
         name: item.name,

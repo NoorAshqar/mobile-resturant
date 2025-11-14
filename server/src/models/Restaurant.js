@@ -86,6 +86,16 @@ const RestaurantSchema = new Schema(
       type: Number,
       default: 0,
     },
+    themePalette: {
+      type: String,
+      enum: ["sunset", "lagoon", "velvet"],
+      default: "sunset",
+    },
+    themeMode: {
+      type: String,
+      enum: ["light", "dark"],
+      default: "light",
+    },
   },
   {
     timestamps: true,

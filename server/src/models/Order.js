@@ -44,8 +44,8 @@ const OrderSchema = new Schema(
     items: [OrderItemSchema],
     status: {
       type: String,
-      enum: ["active", "completed", "cancelled"],
-      default: "active",
+      enum: ["building", "submitted", "completed", "cancelled"],
+      default: "building",
       required: true,
     },
     subtotal: {
@@ -62,6 +62,22 @@ const OrderSchema = new Schema(
       type: Number,
       default: 0,
       min: 0,
+    },
+    paid: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    paidAt: {
+      type: Date,
+    },
+    submittedAt: {
+      type: Date,
+    },
+    sessionKey: {
+      type: String,
+      index: true,
+      required: true,
     },
   },
   {
