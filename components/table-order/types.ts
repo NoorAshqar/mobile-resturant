@@ -19,6 +19,12 @@ export interface TableOrderDetails {
     cuisine: string;
     themePalette?: string;
     themeMode?: ThemeMode;
+    paymentConfig?: {
+      lahza?: {
+        publicKey: string | null;
+        currency?: string | null;
+      };
+    };
   };
   table: {
     id: string;
@@ -32,8 +38,17 @@ export interface TableOrderDetails {
   status: string;
   paid?: boolean;
   paidAt?: string;
+  payment?: TableOrderPayment;
   createdAt?: string;
   updatedAt?: string;
   submittedAt?: string;
   sessionKey?: string;
+}
+
+export type TableOrderPaymentStatus = "unpaid" | "pending" | "paid" | "failed";
+
+export interface TableOrderPayment {
+  method: "cash" | "card" | "lahtha" | null;
+  status: TableOrderPaymentStatus;
+  reference: string | null;
 }

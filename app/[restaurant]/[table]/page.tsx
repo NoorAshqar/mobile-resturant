@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +17,8 @@ import { MenuItemType } from "@/components/menu-item";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const DEFAULT_LAHZA_CURRENCY =
+  process.env.NEXT_PUBLIC_LAHZA_CURRENCY ?? "ILS";
 
 type ActiveView = "menu" | "summary";
 
@@ -35,6 +33,8 @@ export default function TableOrderPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [activeView, setActiveView] = useState<ActiveView>("menu");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isLahthaReady, setIsLahthaReady] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -78,6 +78,45 @@ export default function TableOrderPage() {
     fetchOrder();
     fetchMenuItems();
   }, [restaurantName, tableNumber]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (window.LahzaPopup) {
+      setIsLahthaReady(true);
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      "script[data-lahtha-loader]",
+    );
+
+    const markReady = () => setIsLahthaReady(true);
+
+    if (existingScript) {
+      existingScript.addEventListener("load", markReady);
+      return () => {
+        existingScript.removeEventListener("load", markReady);
+      };
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://js.lahza.io/inline.min.js";
+    script.async = true;
+    script.dataset.lahthaLoader = "true";
+    script.onload = markReady;
+    script.onerror = () => {
+      console.error("[LAHTHA_SCRIPT_ERROR] Failed to load Lahtha popup script.");
+      toast.error("Unable to load Lahtha payment widget.");
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", markReady);
+    };
+  }, []);
 
   const isEditableOrder = order?.status === "building";
 
@@ -290,6 +329,99 @@ export default function TableOrderPage() {
     handleUpdateQuantity(itemId, quantity);
   };
 
+  const orderLahzaConfig = order?.restaurant.paymentConfig?.lahza;
+  const lahzaPublicKey = orderLahzaConfig?.publicKey ?? null;
+  const lahzaCurrency =
+    orderLahzaConfig?.currency ?? DEFAULT_LAHZA_CURRENCY ?? "ILS";
+
+  const handleLahthaPayment = () => {
+    if (!order) {
+      toast.error("Order not found.");
+      return;
+    }
+
+    if (order.items.length === 0) {
+      toast.info("Add at least one item before paying.");
+      return;
+    }
+
+    if (!lahzaPublicKey) {
+      toast.error("Lahtha public key is not configured.");
+      return;
+    }
+
+    if (typeof window === "undefined" || !window.LahzaPopup || !isLahthaReady) {
+      toast.error("Lahtha payment widget is not ready yet.");
+      return;
+    }
+
+    const amountInMinorUnits = Math.round(order.total * 100);
+    if (!Number.isFinite(amountInMinorUnits) || amountInMinorUnits <= 0) {
+      toast.error("Total must be greater than zero before paying.");
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      const popup = new window.LahzaPopup();
+      popup.newTransaction({
+        key: lahzaPublicKey,
+        amount: amountInMinorUnits,
+        currency: lahzaCurrency,
+        metadata: {
+          orderId: order.id,
+          restaurantId: order.restaurant.id,
+          restaurantName: order.restaurant.name,
+          tableId: order.table.id,
+          tableNumber: order.table.number,
+          total: order.total,
+        },
+        onSuccess: async (transaction) => {
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/payment`,
+              {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                  status: "paid",
+                  method: "lahtha",
+                  reference: transaction.reference,
+                  metadata: transaction,
+                }),
+              },
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              setOrder(data.order);
+              toast.success("Payment completed successfully.");
+            } else {
+              toast.error("Payment completed but failed to sync order.");
+            }
+          } catch (error) {
+            console.error(error);
+            toast.error("Payment completed but failed to sync order.");
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        },
+        onCancel: () => {
+          toast.info("Payment window closed.");
+          setIsProcessingPayment(false);
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to initialize Lahtha payment.");
+      setIsProcessingPayment(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
@@ -395,6 +527,12 @@ export default function TableOrderPage() {
               onSubmitOrder={handleSubmitOrder}
               restaurantName={restaurantName}
               tableNumber={tableNumber}
+              paymentStatus={order.payment?.status ?? "unpaid"}
+              paymentReference={order.payment?.reference ?? null}
+              onPayWithLahtha={handleLahthaPayment}
+              isProcessingPayment={isProcessingPayment}
+              isLahthaReady={isLahthaReady}
+              isLahthaConfigured={Boolean(lahzaPublicKey)}
             />
                       </div>
                     </div>

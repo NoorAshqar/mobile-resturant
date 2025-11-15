@@ -117,6 +117,33 @@ Add as many documents as you like—the dashboard aggregates totals automaticall
 
 Protected routes require the `admin-token` cookie issued during login.
 
+## Lahtha Payments
+
+Table bills now support contactless Lahtha (Lahza) checkout directly from the customer tablet/phone.
+
+Each restaurant/admin can store its own Lahtha credentials (public key plus optional merchant/currency overrides). Use the authenticated endpoint:
+
+```
+PUT /api/restaurant
+{
+  "paymentConfig": {
+    "lahza": {
+      "publicKey": "pk_live_xxx",
+      "currency": "ILS",
+      "merchantId": "merchant_123"
+    }
+  }
+}
+```
+
+Only the public key/currency are ever returned to diners.
+
+1. For each admin, copy their Lahtha **public key** into the restaurant settings via the API (UI coming soon) so guest checkout uses the right merchant.
+2. Ensure your ordering tablets send `restaurantId` metadata (already handled in `app/[restaurant]/[table]/page.tsx`) so payments pick up the right key automatically.
+3. (Optional) Adjust `NEXT_PUBLIC_LAHZA_CURRENCY` or the per-restaurant `currency` field if you charge in anything other than ILS.
+
+Customers see a “Pay with Lahtha” button inside the bill view. Successful charges flip the order’s payment status to **Paid** instantly after the popup reports success.
+
 ## Deployment Notes
 
 - Deploy the front end and API separately (e.g. Vercel + Render/Fly/Heroku).

@@ -37,6 +37,11 @@ interface Order {
   status: string;
   createdAt: string;
   updatedAt: string;
+  payment?: {
+    method: string | null;
+    status: "unpaid" | "pending" | "paid" | "failed";
+    reference: string | null;
+  };
 }
 
 export default function OrdersPage() {
@@ -107,6 +112,24 @@ export default function OrdersPage() {
   };
 
   const getStatusLabel = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  const getPaymentBadgeClasses = (status?: string) => {
+    switch (status) {
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-amber-100 text-amber-900";
+      case "failed":
+        return "bg-rose-100 text-rose-900";
+      default:
+        return "bg-slate-200 text-slate-900";
+    }
+  };
+
+  const getPaymentLabel = (status?: string) => {
+    if (!status) return "Unpaid";
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
@@ -311,6 +334,20 @@ export default function OrdersPage() {
                       ${order.total.toFixed(2)}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t pt-4">
+                  <div>
+                    <p className="text-sm font-semibold">Payment</p>
+                    <p className="text-xs text-muted-foreground">
+                      {order.payment?.reference ?? "Awaiting reference"}
+                    </p>
+                  </div>
+                  <Badge
+                    className={`font-semibold ${getPaymentBadgeClasses(order.payment?.status)}`}
+                  >
+                    {getPaymentLabel(order.payment?.status)}
+                  </Badge>
                 </div>
               </div>
             </Card>

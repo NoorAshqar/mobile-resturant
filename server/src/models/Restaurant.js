@@ -96,6 +96,24 @@ const RestaurantSchema = new Schema(
       enum: ["light", "dark"],
       default: "light",
     },
+    paymentConfig: {
+      lahza: {
+        publicKey: {
+          type: String,
+          trim: true,
+        },
+        currency: {
+          type: String,
+          trim: true,
+          uppercase: true,
+          default: "ILS",
+        },
+        merchantId: {
+          type: String,
+          trim: true,
+        },
+      },
+    },
   },
   {
     timestamps: true,

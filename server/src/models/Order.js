@@ -71,6 +71,22 @@ const OrderSchema = new Schema(
     paidAt: {
       type: Date,
     },
+    paymentMethod: {
+      type: String,
+      enum: ["cash", "card", "lahtha"],
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["unpaid", "pending", "paid", "failed"],
+      default: "unpaid",
+      required: true,
+    },
+    paymentReference: {
+      type: String,
+    },
+    paymentMetadata: {
+      type: Schema.Types.Mixed,
+    },
     submittedAt: {
       type: Date,
     },

@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChefHat, ChevronDown, ChevronUp, Minus, Plus, Receipt, ShoppingCart, Trash2 } from "lucide-react";
+import { ChefHat, ChevronDown, ChevronUp, Loader2, Minus, Plus, Receipt, ShoppingCart, Trash2 } from "lucide-react";
 
 import { MenuItemType } from "@/components/menu-item";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TableOrderDetails } from "@/components/table-order/types";
+import {
+  TableOrderDetails,
+  TableOrderPaymentStatus,
+} from "@/components/table-order/types";
 import { ImageWithFallback } from "@/components/figma/image-with-fallback";
 
 const API_BASE_URL =
@@ -39,6 +42,12 @@ interface TableOrderSummaryProps {
   onSubmitOrder: () => void;
   restaurantName: string;
   tableNumber: string;
+  paymentStatus: TableOrderPaymentStatus;
+  paymentReference: string | null;
+  onPayWithLahtha: () => void;
+  isProcessingPayment: boolean;
+  isLahthaReady: boolean;
+  isLahthaConfigured: boolean;
 }
 
 export function TableOrderSummary({
@@ -52,6 +61,12 @@ export function TableOrderSummary({
   onSubmitOrder,
   restaurantName,
   tableNumber,
+  paymentStatus,
+  paymentReference,
+  onPayWithLahtha,
+  isProcessingPayment,
+  isLahthaReady,
+  isLahthaConfigured,
 }: TableOrderSummaryProps) {
   const [submittedOrders, setSubmittedOrders] = useState<SubmittedOrder[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
@@ -102,6 +117,36 @@ export function TableOrderSummary({
       hour12: true,
     });
   };
+
+  const paymentStatusLabels: Record<TableOrderPaymentStatus, string> = {
+    unpaid: "Unpaid",
+    pending: "Pending",
+    paid: "Paid",
+    failed: "Failed",
+  };
+
+  const paymentStatusMessages: Record<TableOrderPaymentStatus, string> = {
+    unpaid: "Use Lahtha to pay securely from your phone.",
+    pending: "We received your payment and are waiting for confirmation.",
+    paid: "Thanks! Your payment is confirmed.",
+    failed: "The last attempt failed. Please try again or ask for help.",
+  };
+
+  const paymentBadgeClasses: Record<TableOrderPaymentStatus, string> = {
+    unpaid: "bg-slate-200 text-slate-900",
+    pending: "bg-amber-100 text-amber-900",
+    paid: "bg-emerald-100 text-emerald-900",
+    failed: "bg-rose-100 text-rose-900",
+  };
+
+  const disableLahthaButton =
+    !canEdit ||
+    !isLahthaConfigured ||
+    !isLahthaReady ||
+    isProcessingPayment ||
+    order.items.length === 0 ||
+    paymentStatus === "paid" ||
+    paymentStatus === "pending";
 
   return (
     <div className={`${isVisible ? "block" : "hidden"} lg:block lg:w-[380px]`}>
@@ -313,6 +358,55 @@ export function TableOrderSummary({
               <span>Total</span>
               <span>${grandTotal.toFixed(2)}</span>
             </div>
+          </div>
+
+          <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Payment status</p>
+                <p className="text-xs text-muted-foreground">
+                  {paymentStatusMessages[paymentStatus]}
+                </p>
+              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentBadgeClasses[paymentStatus]}`}
+              >
+                {paymentStatusLabels[paymentStatus]}
+              </span>
+            </div>
+
+            {paymentReference && (
+              <p className="text-xs text-muted-foreground">
+                Reference: <span className="font-semibold">{paymentReference}</span>
+              </p>
+            )}
+
+            <Button
+              className="mt-2 w-full rounded-full text-sm font-semibold"
+              onClick={onPayWithLahtha}
+              disabled={disableLahthaButton}
+            >
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing with Lahtha...
+                </>
+              ) : (
+                "Pay with Lahtha"
+              )}
+            </Button>
+
+            {!isLahthaConfigured && (
+              <p className="text-xs text-amber-600">
+                Lahtha public key is not configured. Please contact the restaurant admin.
+              </p>
+            )}
+            {!isLahthaReady && isLahthaConfigured && (
+              <p className="text-xs text-muted-foreground">
+                Loading Lahtha payment widget...
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">Powered by Lahtha.</p>
           </div>
 
         </Card>

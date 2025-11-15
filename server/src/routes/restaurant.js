@@ -8,6 +8,15 @@ const router = express.Router();
 const allowedPalettes = ["sunset", "lagoon", "velvet"];
 const allowedModes = ["light", "dark"];
 
+const slugify = (value = "") =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
 function applyThemeSettings(restaurant, themePalette, themeMode) {
   let changed = false;
   if (themePalette && allowedPalettes.includes(themePalette)) {
@@ -26,7 +35,16 @@ function applyThemeSettings(restaurant, themePalette, themeMode) {
 router.put("/", authMiddleware, async (req, res) => {
   try {
     const adminId = req.admin.sub;
-    const { name, cuisine, status, themePalette, themeMode } = req.body ?? {};
+
+    const {
+      name,
+      cuisine,
+      status,
+      themePalette,
+      themeMode,
+      paymentConfig,
+      lahza,
+    } = req.body ?? {};
 
     const restaurant = await Restaurant.findOne({ admin: adminId });
 
@@ -41,6 +59,29 @@ router.put("/", authMiddleware, async (req, res) => {
     }
 
     applyThemeSettings(restaurant, themePalette, themeMode);
+
+    const lahzaBody = paymentConfig?.lahza ?? lahza;
+    if (lahzaBody) {
+      restaurant.paymentConfig ??= {};
+      restaurant.paymentConfig.lahza ??= {};
+
+      if (typeof lahzaBody.publicKey === "string") {
+        restaurant.paymentConfig.lahza.publicKey = lahzaBody.publicKey.trim();
+      }
+      if (typeof lahzaBody.currency === "string") {
+        const normalized = lahzaBody.currency.trim().toUpperCase();
+        if (normalized.length > 0) {
+          restaurant.paymentConfig.lahza.currency = normalized;
+        }
+      }
+      if (typeof lahzaBody.merchantId === "string") {
+        restaurant.paymentConfig.lahza.merchantId = lahzaBody.merchantId.trim();
+      }
+    }
+
+    if (!restaurant.slug && restaurant.name) {
+      restaurant.slug = slugify(restaurant.name);
+    }
 
     await restaurant.save();
 
@@ -57,6 +98,13 @@ router.put("/", authMiddleware, async (req, res) => {
       trendPercentage: restaurant.trendPercentage,
       themePalette: restaurant.themePalette,
       themeMode: restaurant.themeMode,
+      paymentConfig: {
+        lahza: {
+          publicKey: restaurant.paymentConfig?.lahza?.publicKey ?? null,
+          currency: restaurant.paymentConfig?.lahza?.currency ?? "ILS",
+          merchantId: restaurant.paymentConfig?.lahza?.merchantId ?? null,
+        },
+      },
     };
 
     return res.json({ restaurant: data });

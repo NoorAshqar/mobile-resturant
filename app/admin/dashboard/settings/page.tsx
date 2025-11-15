@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Loader2, Save, Store } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +24,12 @@ interface Restaurant {
   description?: string;
   themePalette?: string;
   themeMode?: "light" | "dark";
+  paymentConfig?: {
+    lahza?: {
+      publicKey: string | null;
+      currency?: string | null;
+    };
+  };
 }
 
 export default function RestaurantSettingsPage() {
@@ -34,6 +39,8 @@ export default function RestaurantSettingsPage() {
     name: "",
     cuisine: "",
     status: "active" as "active" | "inactive",
+    lahzaPublicKey: "",
+    lahzaCurrency: "ILS",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +60,8 @@ export default function RestaurantSettingsPage() {
               name: data.restaurant.name,
               cuisine: data.restaurant.cuisine,
               status: data.restaurant.status,
+              lahzaPublicKey: data.restaurant.paymentConfig?.lahza?.publicKey ?? "",
+              lahzaCurrency: data.restaurant.paymentConfig?.lahza?.currency ?? "ILS",
             });
           }
         }
@@ -90,7 +99,17 @@ export default function RestaurantSettingsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formState),
+        body: JSON.stringify({
+          name: formState.name.trim(),
+          cuisine: formState.cuisine.trim(),
+          status: formState.status,
+          paymentConfig: {
+            lahza: {
+              publicKey: formState.lahzaPublicKey.trim(),
+              currency: formState.lahzaCurrency.trim() || "ILS",
+            },
+          },
+        }),
         credentials: "include",
       });
 
@@ -198,6 +217,39 @@ export default function RestaurantSettingsPage() {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="lahzaPublicKey" className="text-sm font-semibold">
+                Lahtha Public Key
+              </label>
+              <Input
+                id="lahzaPublicKey"
+                name="lahzaPublicKey"
+                type="text"
+                placeholder="pk_live_xxxxx"
+                value={formState.lahzaPublicKey}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                This key powers the Lahtha popup shown to customers on the order page.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="lahzaCurrency" className="text-sm font-semibold">
+                Lahtha Currency
+              </label>
+              <Input
+                id="lahzaCurrency"
+                name="lahzaCurrency"
+                type="text"
+                placeholder="ILS"
+                value={formState.lahzaCurrency}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
             </div>
 
             <div className="pt-4">

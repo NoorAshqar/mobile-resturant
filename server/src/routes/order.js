@@ -18,6 +18,9 @@ const NON_EDITABLE_VIEWABLE_STATUSES = VIEWABLE_STATUSES.filter(
 );
 const TAX_RATE = 0.1;
 
+const allowedPaymentStatuses = ["unpaid", "pending", "paid", "failed"];
+const allowedPaymentMethods = ["cash", "card", "lahtha"];
+
 function calculateTotals(order) {
   const subtotal = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -37,6 +40,7 @@ function formatOrderResponse(order, restaurant, table) {
       cuisine: restaurant.cuisine,
       themePalette: restaurant.themePalette,
       themeMode: restaurant.themeMode,
+      paymentConfig: buildPaymentConfig(restaurant),
     },
     table: {
       id: table._id.toString(),
@@ -57,10 +61,24 @@ function formatOrderResponse(order, restaurant, table) {
     status: order.status,
     paid: order.paid || false,
     paidAt: order.paidAt,
+    payment: {
+      method: order.paymentMethod ?? null,
+      status: order.paymentStatus ?? "unpaid",
+      reference: order.paymentReference ?? null,
+    },
     createdAt: order.createdAt,
     submittedAt: order.submittedAt,
     sessionKey: order.sessionKey,
     updatedAt: order.updatedAt,
+  };
+}
+
+function buildPaymentConfig(restaurant) {
+  return {
+    lahza: {
+      publicKey: restaurant.paymentConfig?.lahza?.publicKey ?? null,
+      currency: restaurant.paymentConfig?.lahza?.currency ?? "ILS",
+    },
   };
 }
 
@@ -113,6 +131,11 @@ router.get("/admin/list", authMiddleware, async (req, res) => {
       status: order.status,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      payment: {
+        method: order.paymentMethod ?? null,
+        status: order.paymentStatus ?? "unpaid",
+        reference: order.paymentReference ?? null,
+      },
     }));
 
     return res.json({ orders: data });
@@ -692,4 +715,96 @@ router.post("/:restaurantName/:tableNumber/submit", async (req, res) => {
   }
 });
 
+router.patch("/:restaurantName/:tableNumber/payment", async (req, res) => {
+  try {
+    const { restaurantName, tableNumber } = req.params;
+    const { status, method, reference, metadata } = req.body ?? {};
+
+    if (
+      status === undefined &&
+      method === undefined &&
+      reference === undefined &&
+      metadata === undefined
+    ) {
+      return res.status(400).json({ message: "No payment updates provided." });
+    }
+
+    if (status && !allowedPaymentStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid payment status." });
+    }
+
+    if (method && !allowedPaymentMethods.includes(method)) {
+      return res.status(400).json({ message: "Invalid payment method." });
+    }
+
+    const restaurant = await Restaurant.findOne({
+      $or: [
+        { slug: restaurantName.toLowerCase() },
+        { name: { $regex: new RegExp(`^${restaurantName}$`, "i") } },
+      ],
+      status: "active",
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const table = await Table.findOne({
+      restaurant: restaurant._id,
+      number: parseInt(tableNumber),
+    });
+
+    if (!table) {
+      return res.status(404).json({ message: "Table not found." });
+    }
+
+    const order = await Order.findOne({
+      restaurant: restaurant._id,
+      table: table._id,
+      status: { $in: VIEWABLE_STATUSES },
+    }).sort({ updatedAt: -1 });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    if (method) {
+      order.paymentMethod = method;
+    }
+
+    if (status) {
+      order.paymentStatus = status;
+      if (status === "paid") {
+        order.paid = true;
+        order.paidAt = new Date();
+        if (order.status === EDITABLE_STATUS) {
+          order.status = SUBMITTED_STATUS;
+        }
+      }
+      if (status === "failed") {
+        order.paid = false;
+      }
+    }
+
+    if (reference) {
+      order.paymentReference = reference;
+    }
+
+    if (metadata && typeof metadata === "object") {
+      order.paymentMetadata = metadata;
+    }
+
+    await order.save();
+
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
+  } catch (error) {
+    console.error("[ORDER_PAYMENT_UPDATE_ERROR]", error);
+    return res.status(500).json({ message: "Failed to update payment state." });
+  }
+});
+
 module.exports = router;
+
+// patch route will be inserted before module exports

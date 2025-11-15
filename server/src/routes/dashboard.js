@@ -34,6 +34,13 @@ router.get("/", authMiddleware, async (req, res) => {
       trendPercentage: restaurant.trendPercentage,
       themePalette: restaurant.themePalette,
       themeMode: restaurant.themeMode,
+      paymentConfig: {
+        lahza: {
+          publicKey: restaurant.paymentConfig?.lahza?.publicKey ?? null,
+          currency: restaurant.paymentConfig?.lahza?.currency ?? "ILS",
+          merchantId: restaurant.paymentConfig?.lahza?.merchantId ?? null,
+        },
+      },
     };
 
     return res.json({ restaurant: data });
@@ -105,6 +112,13 @@ router.post("/restaurant", authMiddleware, async (req, res) => {
       trendPercentage: restaurant.trendPercentage,
       themePalette: restaurant.themePalette,
       themeMode: restaurant.themeMode,
+      paymentConfig: {
+        lahza: {
+          publicKey: restaurant.paymentConfig?.lahza?.publicKey ?? null,
+          currency: restaurant.paymentConfig?.lahza?.currency ?? "ILS",
+          merchantId: restaurant.paymentConfig?.lahza?.merchantId ?? null,
+        },
+      },
     };
 
     return res.status(201).json({ restaurant: data });
