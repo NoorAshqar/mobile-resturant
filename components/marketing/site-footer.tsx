@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const footerLinks = [
   {
@@ -22,6 +23,12 @@ const footerLinks = [
 ];
 
 export function SiteFooter() {
+  const [year, setYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="mt-16 border-t border-border bg-background px-4 py-10">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:justify-between">
@@ -31,7 +38,8 @@ export function SiteFooter() {
             Multi-theme QR menus for modern dining rooms.
           </p>
           <p className="mt-4 text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Kareem Eats. All rights reserved.
+            &copy; {year || new Date().getFullYear()} Kareem Eats. All rights
+            reserved.
           </p>
         </div>
 

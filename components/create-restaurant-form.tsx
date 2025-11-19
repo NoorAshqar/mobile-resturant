@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Image, Link2, Loader2, Store, UtensilsCrossed } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import {
   Card,
   CardContent,
@@ -14,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { Input } from "./ui/input";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -103,7 +103,7 @@ export function CreateRestaurantForm() {
       <Card className="w-full max-w-3xl border-2 shadow-2xl">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl shadow-xl">
-            <Store className="h-12 w-12 text-white" />
+            <Store className="h-12 w-12 text-black dark:text-white" />
           </div>
           <div>
             <CardTitle className="text-3xl font-bold">
@@ -166,7 +166,10 @@ export function CreateRestaurantForm() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="logoUrl" className="block text-sm font-semibold">
+                <label
+                  htmlFor="logoUrl"
+                  className="block text-sm font-semibold"
+                >
                   Logo URL
                 </label>
                 <div className="relative">
@@ -185,7 +188,10 @@ export function CreateRestaurantForm() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="cuisine" className="block text-sm font-semibold">
+                <label
+                  htmlFor="cuisine"
+                  className="block text-sm font-semibold"
+                >
                   Cuisine Type *
                 </label>
                 <Input
@@ -218,12 +224,11 @@ export function CreateRestaurantForm() {
                   className="w-full rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 />
               </div>
-
             </div>
 
             <Button
               type="submit"
-              className="w-full text-white font-semibold transition-all hover:shadow-xl"
+              className="w-full text-black dark:text-white font-semibold transition-all hover:shadow-xl"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

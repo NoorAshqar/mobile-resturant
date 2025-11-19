@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  Receipt,
-  Search,
   Clock,
   DollarSign,
+  Receipt,
+  Search,
   Table as TableIcon,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { colors } from "@/config/colors";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -229,7 +229,9 @@ export default function OrdersPage() {
               variant="outline"
               onClick={() => setStatusFilter("all")}
               className={`border-2 ${
-                statusFilter === "all" ? "shadow-md" : ""
+                statusFilter === "all"
+                  ? "shadow-md background-sidebar-primary"
+                  : ""
               }`}
             >
               All
@@ -344,7 +346,9 @@ export default function OrdersPage() {
                     </p>
                   </div>
                   <Badge
-                    className={`font-semibold ${getPaymentBadgeClasses(order.payment?.status)}`}
+                    className={`font-semibold ${getPaymentBadgeClasses(
+                      order.payment?.status,
+                    )}`}
                   >
                     {getPaymentLabel(order.payment?.status)}
                   </Badge>

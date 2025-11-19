@@ -73,7 +73,7 @@ const OrderSchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cash", "card", "lahtha"],
+      enum: ["cash", "card", "lahza"],
     },
     paymentStatus: {
       type: String,
@@ -98,7 +98,7 @@ const OrderSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Ensure one active order per table
@@ -107,4 +107,3 @@ OrderSchema.index({ restaurant: 1, table: 1, status: 1 }, { unique: false });
 const Order = models.Order ?? model("Order", OrderSchema);
 
 module.exports = Order;
-

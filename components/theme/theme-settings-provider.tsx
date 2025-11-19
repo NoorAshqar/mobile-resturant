@@ -1,20 +1,14 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
 import { useTheme } from "next-themes";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import {
-    defaultThemePresetId,
-    isThemePresetId,
-    themePresets,
-    ThemePreset,
-    ThemePresetId,
+  defaultThemePresetId,
+  isThemePresetId,
+  ThemePreset,
+  ThemePresetId,
+  themePresets,
 } from "@/config/theme-presets";
 
 const STORAGE_KEY = "mr-theme-palette";
@@ -25,8 +19,9 @@ interface ThemeSettingsContextValue {
   preset: ThemePreset;
 }
 
-const ThemeSettingsContext =
-  createContext<ThemeSettingsContextValue | null>(null);
+const ThemeSettingsContext = createContext<ThemeSettingsContextValue | null>(
+  null,
+);
 
 export function ThemeSettingsProvider({
   children,
@@ -40,9 +35,7 @@ export function ThemeSettingsProvider({
     }
 
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored && isThemePresetId(stored)
-      ? stored
-      : defaultThemePresetId;
+    return stored && isThemePresetId(stored) ? stored : defaultThemePresetId;
   });
 
   useEffect(() => {
@@ -53,7 +46,7 @@ export function ThemeSettingsProvider({
   }, [paletteId]);
 
   useEffect(() => {
-    if (!resolvedTheme) {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -62,12 +55,18 @@ export function ThemeSettingsProvider({
     const vars = preset[mode];
     const root = document.documentElement;
 
+    // Apply all variables immediately
     Object.entries(vars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
-
     root.dataset.palette = preset.id;
+
+    // Force a style recalculation by triggering a reflow
+    void root.offsetHeight;
   }, [paletteId, resolvedTheme]);
+
+  // ...existing code...
+  // Removed the duplicate additional effect
 
   const value = useMemo(
     () => ({

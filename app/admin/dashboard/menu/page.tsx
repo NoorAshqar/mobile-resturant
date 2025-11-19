@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MenuItemForm } from "@/components/menu-item-form";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { colors } from "@/config/colors";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -133,10 +133,7 @@ export default function MenuManagementPage() {
               <h2 className="text-2xl font-bold">Menu Items</h2>
               <p className="text-sm mt-1">Manage your restaurant menu items</p>
             </div>
-            <Button
-              onClick={handleAdd}
-              className="font-semibold shadow-md"
-            >
+            <Button onClick={handleAdd} className="font-semibold shadow-md">
               <Plus className="mr-2 h-5 w-5" />
               Add Menu Item
             </Button>

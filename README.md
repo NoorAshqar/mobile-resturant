@@ -72,7 +72,7 @@ Prefer to seed via the shell?
 ```js
 db.admins.insertOne({
   email: "admin@example.com",
-  password: "$2a$12$eR0uQTP3P8QHzTyZ1BWzuOKbYKT5iDJrpVlzDqgW8sELpAo0P5uQ2" // hashed "password123"
+  password: "$2a$12$eR0uQTP3P8QHzTyZ1BWzuOKbYKT5iDJrpVlzDqgW8sELpAo0P5uQ2", // hashed "password123"
 });
 ```
 
@@ -108,20 +108,20 @@ Add as many documents as you like—the dashboard aggregates totals automaticall
 
 ## API Endpoints (Express server)
 
-| Method | Route               | Description                          | Auth |
-| ------ | ------------------- | ------------------------------------ | ---- |
-| POST   | `/api/auth/signup`  | Create a new admin account           | No   |
-| POST   | `/api/auth/login`   | Authenticate admin & set session     | No   |
-| POST   | `/api/auth/logout`  | Destroy admin session                | Yes  |
-| GET    | `/api/dashboard`    | Protected restaurant dashboard data  | Yes  |
+| Method | Route              | Description                         | Auth |
+| ------ | ------------------ | ----------------------------------- | ---- |
+| POST   | `/api/auth/signup` | Create a new admin account          | No   |
+| POST   | `/api/auth/login`  | Authenticate admin & set session    | No   |
+| POST   | `/api/auth/logout` | Destroy admin session               | Yes  |
+| GET    | `/api/dashboard`   | Protected restaurant dashboard data | Yes  |
 
 Protected routes require the `admin-token` cookie issued during login.
 
-## Lahtha Payments
+## Lahza Payments
 
-Table bills now support contactless Lahtha (Lahza) checkout directly from the customer tablet/phone.
+Table bills now support contactless Lahza (Lahza) checkout directly from the customer tablet/phone.
 
-Each restaurant/admin can store its own Lahtha credentials (public key plus optional merchant/currency overrides). Use the authenticated endpoint:
+Each restaurant/admin can store its own Lahza credentials (public key plus optional merchant/currency overrides). Use the authenticated endpoint:
 
 ```
 PUT /api/restaurant
@@ -138,11 +138,11 @@ PUT /api/restaurant
 
 Only the public key/currency are ever returned to diners.
 
-1. For each admin, copy their Lahtha **public key** into the restaurant settings via the API (UI coming soon) so guest checkout uses the right merchant.
+1. For each admin, copy their Lahza **public key** into the restaurant settings via the API (UI coming soon) so guest checkout uses the right merchant.
 2. Ensure your ordering tablets send `restaurantId` metadata (already handled in `app/[restaurant]/[table]/page.tsx`) so payments pick up the right key automatically.
 3. (Optional) Adjust `NEXT_PUBLIC_LAHZA_CURRENCY` or the per-restaurant `currency` field if you charge in anything other than ILS.
 
-Customers see a “Pay with Lahtha” button inside the bill view. Successful charges flip the order’s payment status to **Paid** instantly after the popup reports success.
+Customers see a “Pay with Lahza” button inside the bill view. Successful charges flip the order’s payment status to **Paid** instantly after the popup reports success.
 
 ## Deployment Notes
 

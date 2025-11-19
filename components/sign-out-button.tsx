@@ -34,7 +34,7 @@ export function SignOutButton() {
     <Button
       variant={null}
       onClick={handleSignOut}
-      className="transition-all hover:shadow-md text-white"
+      className="transition-all hover:shadow-md text-black dark:text-white"
     >
       <LogOut className="mr-2 h-4 w-4" />
       Sign Out

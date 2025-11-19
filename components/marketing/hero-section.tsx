@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
+import { useThemeSettings } from "@/components/theme/theme-settings-provider";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
-import { useThemeSettings } from "@/components/theme/theme-settings-provider";
 
 interface HeroSectionProps {
   eyebrow: string;
@@ -31,15 +32,22 @@ export function HeroSection({
   ],
 }: HeroSectionProps) {
   const { preset } = useThemeSettings();
-  const gradient = `linear-gradient(120deg, ${preset.preview[0]}, ${preset.preview[1]}, ${preset.preview[2]})`;
+  const [gradient, setGradient] = useState<string>("");
+
+  useEffect(() => {
+    setGradient(
+      `linear-gradient(120deg, ${preset.preview[0]}, ${preset.preview[1]}, ${preset.preview[2]})`,
+    );
+  }, [preset]);
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-border bg-background shadow-xl">
       <div
         className="absolute inset-0 opacity-90"
         style={{ backgroundImage: gradient }}
+        suppressHydrationWarning
       />
-      <div className="relative px-6 py-16 text-white sm:px-12 lg:px-16">
+      <div className="relative px-6 py-16 text-black dark:text-white sm:px-12 lg:px-16">
         <div
           className={cn(
             "mx-auto flex max-w-4xl flex-col gap-8 text-center",
@@ -53,7 +61,9 @@ export function HeroSection({
             <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
               {title}
             </h1>
-            <p className="mt-4 text-base text-white/80 sm:text-lg">{subtitle}</p>
+            <p className="mt-4 text-base text-white/80 sm:text-lg">
+              {subtitle}
+            </p>
           </div>
 
           <div
@@ -77,7 +87,7 @@ export function HeroSection({
                 asChild
                 size="lg"
                 variant="secondary"
-                className="rounded-full border border-white/60 bg-transparent px-6 text-base font-semibold text-white hover:bg-white/10"
+                className="rounded-full border border-white/60 bg-transparent px-6 text-base font-semibold text-black dark:text-white hover:bg-white/10"
               >
                 <Link href={secondaryCta.href}>{secondaryCta.label}</Link>
               </Button>
@@ -87,10 +97,7 @@ export function HeroSection({
 
         <div className="mt-12 grid gap-6 rounded-3xl border border-white/30 bg-white/10 p-6 text-sm sm:grid-cols-3">
           {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="text-center sm:text-left"
-            >
+            <div key={stat.label} className="text-center sm:text-left">
               <p className="text-2xl font-semibold">{stat.value}</p>
               <p className="text-white/80">{stat.label}</p>
             </div>

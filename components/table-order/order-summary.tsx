@@ -1,16 +1,26 @@
 "use client";
 
+import {
+  ChefHat,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Minus,
+  Plus,
+  Receipt,
+  ShoppingCart,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { ChefHat, ChevronDown, ChevronUp, Loader2, Minus, Plus, Receipt, ShoppingCart, Trash2 } from "lucide-react";
 
+import { ImageWithFallback } from "@/components/figma/image-with-fallback";
 import { MenuItemType } from "@/components/menu-item";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   TableOrderDetails,
   TableOrderPaymentStatus,
 } from "@/components/table-order/types";
-import { ImageWithFallback } from "@/components/figma/image-with-fallback";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -44,10 +54,10 @@ interface TableOrderSummaryProps {
   tableNumber: string;
   paymentStatus: TableOrderPaymentStatus;
   paymentReference: string | null;
-  onPayWithLahtha: () => void;
+  onPayWithLahza: () => void;
   isProcessingPayment: boolean;
-  isLahthaReady: boolean;
-  isLahthaConfigured: boolean;
+  isLahzaReady: boolean;
+  isLahzaConfigured: boolean;
 }
 
 export function TableOrderSummary({
@@ -63,10 +73,10 @@ export function TableOrderSummary({
   tableNumber,
   paymentStatus,
   paymentReference,
-  onPayWithLahtha,
+  onPayWithLahza,
   isProcessingPayment,
-  isLahthaReady,
-  isLahthaConfigured,
+  isLahzaReady,
+  isLahzaConfigured,
 }: TableOrderSummaryProps) {
   const [submittedOrders, setSubmittedOrders] = useState<SubmittedOrder[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
@@ -90,7 +100,7 @@ export function TableOrderSummary({
       try {
         const response = await fetch(
           `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${order.sessionKey}`,
-          { credentials: "include" }
+          { credentials: "include" },
         );
 
         if (response.ok) {
@@ -105,9 +115,12 @@ export function TableOrderSummary({
     fetchSubmittedOrders();
   }, [order.sessionKey, order.id, restaurantName, tableNumber]);
 
-  const grandTotal = submittedOrders.reduce((sum, o) => sum + o.total, 0) + order.total;
-  const grandSubtotal = submittedOrders.reduce((sum, o) => sum + o.subtotal, 0) + order.subtotal;
-  const grandTax = submittedOrders.reduce((sum, o) => sum + o.tax, 0) + order.tax;
+  const grandTotal =
+    submittedOrders.reduce((sum, o) => sum + o.total, 0) + order.total;
+  const grandSubtotal =
+    submittedOrders.reduce((sum, o) => sum + o.subtotal, 0) + order.subtotal;
+  const grandTax =
+    submittedOrders.reduce((sum, o) => sum + o.tax, 0) + order.tax;
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -126,7 +139,7 @@ export function TableOrderSummary({
   };
 
   const paymentStatusMessages: Record<TableOrderPaymentStatus, string> = {
-    unpaid: "Use Lahtha to pay securely from your phone.",
+    unpaid: "Use Lahza to pay securely from your phone.",
     pending: "We received your payment and are waiting for confirmation.",
     paid: "Thanks! Your payment is confirmed.",
     failed: "The last attempt failed. Please try again or ask for help.",
@@ -139,10 +152,10 @@ export function TableOrderSummary({
     failed: "bg-rose-100 text-rose-900",
   };
 
-  const disableLahthaButton =
+  const disableLahzaButton =
     !canEdit ||
-    !isLahthaConfigured ||
-    !isLahthaReady ||
+    !isLahzaConfigured ||
+    !isLahzaReady ||
     isProcessingPayment ||
     order.items.length === 0 ||
     paymentStatus === "paid" ||
@@ -150,15 +163,19 @@ export function TableOrderSummary({
 
   return (
     <div className={`${isVisible ? "block" : "hidden"} lg:block lg:w-[380px]`}>
-      <div className="lg:sticky lg:top-8">
+      <div>
         <Card className="rounded-3xl border-0 bg-card p-6 text-card-foreground shadow-xl ring-1 ring-border/10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Current order</p>
+              <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
+                Current order
+              </p>
               <p className="text-2xl font-semibold text-foreground">
                 {order.items.length === 0
                   ? "No items yet"
-                  : `${order.items.length} ${order.items.length === 1 ? "item" : "items"}`}
+                  : `${order.items.length} ${
+                      order.items.length === 1 ? "item" : "items"
+                    }`}
               </p>
             </div>
             <div className="rounded-2xl bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
@@ -169,9 +186,12 @@ export function TableOrderSummary({
 
           {!canEdit && order.items.length > 0 ? (
             <div className="mt-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-              <p className="font-semibold text-foreground">✓ Order sent to kitchen</p>
+              <p className="font-semibold text-foreground">
+                ✓ Order sent to kitchen
+              </p>
               <p className="mt-1 text-muted-foreground">
-                Your order is being prepared. Keep browsing the menu to add more items for another round!
+                Your order is being prepared. Keep browsing the menu to add more
+                items for another round!
               </p>
             </div>
           ) : null}
@@ -179,9 +199,16 @@ export function TableOrderSummary({
           {order.items.length === 0 ? (
             <div className="mt-8 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center">
               <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="font-semibold text-foreground">Ready when you are</p>
-              <p className="mt-1 text-sm text-muted-foreground">Add dishes from the menu and they’ll appear here.</p>
-              <Button className="mt-4 w-full rounded-full" onClick={onResumeOrdering}>
+              <p className="font-semibold text-foreground">
+                Ready when you are
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add dishes from the menu and they’ll appear here.
+              </p>
+              <Button
+                className="mt-4 w-full rounded-full"
+                onClick={onResumeOrdering}
+              >
                 Start ordering
               </Button>
             </div>
@@ -211,10 +238,16 @@ export function TableOrderSummary({
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">${item.price.toFixed(2)} each</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            ${item.price.toFixed(2)} each
+                          </p>
                         </div>
-                        <span className="text-sm font-bold text-foreground">${item.subtotal.toFixed(2)}</span>
+                        <span className="text-sm font-bold text-foreground">
+                          ${item.subtotal.toFixed(2)}
+                        </span>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
@@ -223,16 +256,22 @@ export function TableOrderSummary({
                             size="sm"
                             variant="outline"
                             className="h-8 w-8 rounded-full p-0"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            onClick={() =>
+                              onUpdateQuantity(item.id, item.quantity - 1)
+                            }
                             disabled={!canEdit}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
+                          <span className="w-6 text-center text-sm font-bold">
+                            {item.quantity}
+                          </span>
                           <Button
                             size="sm"
-                            className="h-8 w-8 rounded-full bg-primary p-0 text-white hover:bg-primary/90"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            className="h-8 w-8 rounded-full bg-primary p-0 text-black dark:text-white hover:bg-primary/90"
+                            onClick={() =>
+                              onUpdateQuantity(item.id, item.quantity + 1)
+                            }
                             disabled={!canEdit}
                           >
                             <Plus className="h-3 w-3" />
@@ -284,7 +323,10 @@ export function TableOrderSummary({
                             </p>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {submittedOrder.items.length} {submittedOrder.items.length === 1 ? 'item' : 'items'}
+                            {submittedOrder.items.length}{" "}
+                            {submittedOrder.items.length === 1
+                              ? "item"
+                              : "items"}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -348,11 +390,15 @@ export function TableOrderSummary({
           <div className="mt-8 space-y-3 rounded-2xl bg-muted/40 px-4 py-4 text-sm text-muted-foreground">
             <div className="flex items-center justify-between">
               <span>Subtotal</span>
-              <span className="font-semibold text-foreground">${grandSubtotal.toFixed(2)}</span>
+              <span className="font-semibold text-foreground">
+                ${grandSubtotal.toFixed(2)}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span>Tax</span>
-              <span className="font-semibold text-foreground">${grandTax.toFixed(2)}</span>
+              <span className="font-semibold text-foreground">
+                ${grandTax.toFixed(2)}
+              </span>
             </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-base font-bold text-foreground">
               <span>Total</span>
@@ -363,7 +409,9 @@ export function TableOrderSummary({
           <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-foreground">Payment status</p>
+                <p className="text-sm font-semibold text-foreground">
+                  Payment status
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {paymentStatusMessages[paymentStatus]}
                 </p>
@@ -377,38 +425,39 @@ export function TableOrderSummary({
 
             {paymentReference && (
               <p className="text-xs text-muted-foreground">
-                Reference: <span className="font-semibold">{paymentReference}</span>
+                Reference:{" "}
+                <span className="font-semibold">{paymentReference}</span>
               </p>
             )}
 
             <Button
               className="mt-2 w-full rounded-full text-sm font-semibold"
-              onClick={onPayWithLahtha}
-              disabled={disableLahthaButton}
+              onClick={onPayWithLahza}
+              disabled={disableLahzaButton}
             >
               {isProcessingPayment ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing with Lahtha...
+                  Processing with Lahza...
                 </>
               ) : (
-                "Pay with Lahtha"
+                "Pay with Lahza"
               )}
             </Button>
 
-            {!isLahthaConfigured && (
+            {!isLahzaConfigured && (
               <p className="text-xs text-amber-600">
-                Lahtha public key is not configured. Please contact the restaurant admin.
+                Lahza public key is not configured. Please contact the
+                restaurant admin.
               </p>
             )}
-            {!isLahthaReady && isLahthaConfigured && (
+            {!isLahzaReady && isLahzaConfigured && (
               <p className="text-xs text-muted-foreground">
-                Loading Lahtha payment widget...
+                Loading Lahza payment widget...
               </p>
             )}
-            <p className="text-xs text-muted-foreground">Powered by Lahtha.</p>
+            <p className="text-xs text-muted-foreground">Powered by Lahza.</p>
           </div>
-
         </Card>
       </div>
 
@@ -438,13 +487,16 @@ export function TableOrderSummary({
         </Card>
 
         <Card className="mt-4 rounded-3xl border-0 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-xl">
-          <p className="text-sm font-semibold text-white/80">Need anything else?</p>
+          <p className="text-sm font-semibold text-white/80">
+            Need anything else?
+          </p>
           <p className="mt-2 text-base">
-            Flag a server or keep exploring the menu. Your progress is saved automatically.
+            Flag a server or keep exploring the menu. Your progress is saved
+            automatically.
           </p>
           <Button
             variant="secondary"
-            className="mt-4 w-full rounded-full bg-white/15 text-sm font-semibold text-white hover:bg-white/25"
+            className="mt-4 w-full rounded-full bg-white/15 text-sm font-semibold text-black dark:text-white hover:bg-white/25"
             onClick={onResumeOrdering}
           >
             Keep browsing

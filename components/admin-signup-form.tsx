@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Lock, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "./ui/button";
@@ -144,7 +144,7 @@ export function AdminSignupForm() {
 
       <Button
         type="submit"
-        className="w-full text-white transition-all hover:shadow-lg"
+        className="w-full text-black dark:text-white transition-all hover:shadow-lg"
         disabled={isSubmitting}
       >
         {isSubmitting ? (

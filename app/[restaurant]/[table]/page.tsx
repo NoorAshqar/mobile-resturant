@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { Loader2, ShoppingCart } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { TableHero } from "@/components/table-order/table-hero";
+import { MenuItemType } from "@/components/menu-item";
 import { TableMenuView } from "@/components/table-order/menu-view";
 import { TableOrderSummary } from "@/components/table-order/order-summary";
 import { RestaurantThemeWrapper } from "@/components/table-order/restaurant-theme-wrapper";
+import { TableHero } from "@/components/table-order/table-hero";
 import {
   type TableOrderDetails,
   type TableOrderItem,
 } from "@/components/table-order/types";
-import { MenuItemType } from "@/components/menu-item";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
-const DEFAULT_LAHZA_CURRENCY =
-  process.env.NEXT_PUBLIC_LAHZA_CURRENCY ?? "ILS";
+const DEFAULT_LAHZA_CURRENCY = process.env.NEXT_PUBLIC_LAHZA_CURRENCY ?? "ILS";
 
 type ActiveView = "menu" | "summary";
 
@@ -34,7 +33,7 @@ export default function TableOrderPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [activeView, setActiveView] = useState<ActiveView>("menu");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [isLahthaReady, setIsLahthaReady] = useState(false);
+  const [isLahzaReady, setIsLahzaReady] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -85,15 +84,15 @@ export default function TableOrderPage() {
     }
 
     if (window.LahzaPopup) {
-      setIsLahthaReady(true);
+      setIsLahzaReady(true);
       return;
     }
 
     const existingScript = document.querySelector<HTMLScriptElement>(
-      "script[data-lahtha-loader]",
+      "script[data-lahza-loader]",
     );
 
-    const markReady = () => setIsLahthaReady(true);
+    const markReady = () => setIsLahzaReady(true);
 
     if (existingScript) {
       existingScript.addEventListener("load", markReady);
@@ -105,11 +104,11 @@ export default function TableOrderPage() {
     const script = document.createElement("script");
     script.src = "https://js.lahza.io/inline.min.js";
     script.async = true;
-    script.dataset.lahthaLoader = "true";
+    script.dataset.lahzaLoader = "true";
     script.onload = markReady;
     script.onerror = () => {
-      console.error("[LAHTHA_SCRIPT_ERROR] Failed to load Lahtha popup script.");
-      toast.error("Unable to load Lahtha payment widget.");
+      console.error("[LAHTHA_SCRIPT_ERROR] Failed to load Lahza popup script.");
+      toast.error("Unable to load Lahza payment widget.");
     };
     document.body.appendChild(script);
 
@@ -147,10 +146,7 @@ export default function TableOrderPage() {
     }
   };
 
-  const handleUpdateQuantity = async (
-    itemId: string,
-    newQuantity: number,
-  ) => {
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (!order || !isEditableOrder) {
       toast.error("Order already submitted to kitchen.");
       return;
@@ -214,8 +210,8 @@ export default function TableOrderPage() {
 
   const categories = useMemo(
     () => [
-    "All",
-    ...Array.from(new Set(menuItems.map((item) => item.category))),
+      "All",
+      ...Array.from(new Set(menuItems.map((item) => item.category))),
     ],
     [menuItems],
   );
@@ -301,7 +297,7 @@ export default function TableOrderPage() {
       }
 
       toast.success("Order sent to the kitchen! Add more items anytime.");
-      
+
       // Fetch the new empty order for the next round
       const newOrderResponse = await fetch(
         `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
@@ -334,7 +330,7 @@ export default function TableOrderPage() {
   const lahzaCurrency =
     orderLahzaConfig?.currency ?? DEFAULT_LAHZA_CURRENCY ?? "ILS";
 
-  const handleLahthaPayment = () => {
+  const handleLahzaPayment = () => {
     if (!order) {
       toast.error("Order not found.");
       return;
@@ -346,12 +342,12 @@ export default function TableOrderPage() {
     }
 
     if (!lahzaPublicKey) {
-      toast.error("Lahtha public key is not configured.");
+      toast.error("Lahza public key is not configured.");
       return;
     }
 
-    if (typeof window === "undefined" || !window.LahzaPopup || !isLahthaReady) {
-      toast.error("Lahtha payment widget is not ready yet.");
+    if (typeof window === "undefined" || !window.LahzaPopup || !isLahzaReady) {
+      toast.error("Lahza payment widget is not ready yet.");
       return;
     }
 
@@ -389,7 +385,7 @@ export default function TableOrderPage() {
                 credentials: "include",
                 body: JSON.stringify({
                   status: "paid",
-                  method: "lahtha",
+                  method: "lahza",
                   reference: transaction.reference,
                   metadata: transaction,
                 }),
@@ -417,7 +413,7 @@ export default function TableOrderPage() {
       });
     } catch (error) {
       console.error(error);
-      toast.error("Unable to initialize Lahtha payment.");
+      toast.error("Unable to initialize Lahza payment.");
       setIsProcessingPayment(false);
     }
   };
@@ -474,70 +470,70 @@ export default function TableOrderPage() {
             }}
           />
 
-        <div className="mt-6 flex gap-3 rounded-2xl bg-card/80 p-2 shadow-sm lg:hidden">
-          {[
-            { id: "menu", label: "Menu" },
-            { id: "summary", label: "Your Order" },
-          ].map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveView(id as ActiveView)}
-              className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-                activeView === id
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-muted-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          <div className="mt-6 flex gap-3 rounded-2xl bg-card/80 p-2 shadow-sm lg:hidden">
+            {[
+              { id: "menu", label: "Menu" },
+              { id: "summary", label: "Your Order" },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveView(id as ActiveView)}
+                className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                  activeView === id
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
-        <div className="mt-6 flex flex-col gap-6 lg:flex-row">
-          <div id="table-menu" className="flex-1">
-            <TableMenuView
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              filteredMenuItems={filteredMenuItems}
-              orderItemsByMenuId={orderItemsByMenuId}
-              onAddMenuItem={handleAddItem}
-              onChangeQuantity={handleUpdateQuantity}
-              onRemoveItem={handleRemoveItem}
-              isVisible={activeView === "menu"}
-              canEdit={isEditableOrder}
-            />
-                    </div>
+          <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+            <div id="table-menu" className="flex-1">
+              <TableMenuView
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                filteredMenuItems={filteredMenuItems}
+                orderItemsByMenuId={orderItemsByMenuId}
+                onAddMenuItem={handleAddItem}
+                onChangeQuantity={handleUpdateQuantity}
+                onRemoveItem={handleRemoveItem}
+                isVisible={activeView === "menu"}
+                canEdit={isEditableOrder}
+              />
+            </div>
 
-          <div id="order-summary">
-            <TableOrderSummary
-              order={order}
-              menuItemsById={menuItemsById}
-              isVisible={activeView === "summary"}
-              canEdit={isEditableOrder}
-              onUpdateQuantity={handleSummaryQuantityChange}
-              onRemoveItem={handleRemoveItem}
-              onResumeOrdering={() => {
-                setActiveView("menu");
-                scrollToSection("table-menu");
-              }}
-              onSubmitOrder={handleSubmitOrder}
-              restaurantName={restaurantName}
-              tableNumber={tableNumber}
-              paymentStatus={order.payment?.status ?? "unpaid"}
-              paymentReference={order.payment?.reference ?? null}
-              onPayWithLahtha={handleLahthaPayment}
-              isProcessingPayment={isProcessingPayment}
-              isLahthaReady={isLahthaReady}
-              isLahthaConfigured={Boolean(lahzaPublicKey)}
-            />
-                      </div>
-                    </div>
-                  </div>
+            <div id="order-summary">
+              <TableOrderSummary
+                order={order}
+                menuItemsById={menuItemsById}
+                isVisible={activeView === "summary"}
+                canEdit={isEditableOrder}
+                onUpdateQuantity={handleSummaryQuantityChange}
+                onRemoveItem={handleRemoveItem}
+                onResumeOrdering={() => {
+                  setActiveView("menu");
+                  scrollToSection("table-menu");
+                }}
+                onSubmitOrder={handleSubmitOrder}
+                restaurantName={restaurantName}
+                tableNumber={tableNumber}
+                paymentStatus={order.payment?.status ?? "unpaid"}
+                paymentReference={order.payment?.reference ?? null}
+                onPayWithLahza={handleLahzaPayment}
+                isProcessingPayment={isProcessingPayment}
+                isLahzaReady={isLahzaReady}
+                isLahzaConfigured={Boolean(lahzaPublicKey)}
+              />
+            </div>
           </div>
+        </div>
+      </div>
     </RestaurantThemeWrapper>
   );
 }

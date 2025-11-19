@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
   DollarSign,
   LayoutDashboard,
@@ -8,6 +7,7 @@ import {
   ShoppingBag,
   Star,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { colors } from "@/config/colors";
 import { RestaurantCard, type RestaurantData } from "./restaurant-card";
@@ -121,7 +121,7 @@ export function RestaurantDashboard({ restaurants }: RestaurantDashboardProps) {
         </div>
 
         {/* Search Bar */}
-        <Card className="p-4 border-2">
+        <Card className="p-4 border-2 mt-6 mb-6">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" />
             <Input

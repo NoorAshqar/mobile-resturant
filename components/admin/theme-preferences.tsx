@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useTheme } from "next-themes";
 import { Check, Moon, Palette, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  themePresets,
-  type ThemePresetId,
-  isThemePresetId,
-} from "@/config/theme-presets";
 import { useThemeSettings } from "@/components/theme/theme-settings-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/components/ui/utils";
+import {
+  isThemePresetId,
+  themePresets,
+  type ThemePresetId,
+} from "@/config/theme-presets";
 
 const paletteEntries = Object.values(themePresets);
 const API_BASE_URL =
@@ -31,31 +31,23 @@ export function ThemePreferencesPanel({
   mode,
 }: ThemePreferencesPanelProps) {
   const { paletteId, setPaletteId } = useThemeSettings();
-  const { setTheme } = useTheme();
-  const [selectedMode, setSelectedMode] = useState<ThemeMode>(
-    mode ?? "light",
-  );
+  const { setTheme, theme } = useTheme();
+  const [selectedMode, setSelectedMode] = useState<ThemeMode>(mode ?? "light");
   const [isSaving, setIsSaving] = useState(false);
 
-  const resolvedInitialPalette = useMemo(() => {
-    if (palette && isThemePresetId(palette)) {
-      return palette;
-    }
-    return null;
-  }, [palette]);
-
+  // Initialize palette from props only once on mount
   useEffect(() => {
-    if (resolvedInitialPalette && resolvedInitialPalette !== paletteId) {
-      setPaletteId(resolvedInitialPalette);
+    if (palette && isThemePresetId(palette) && palette !== paletteId) {
+      setPaletteId(palette);
     }
-  }, [resolvedInitialPalette, paletteId, setPaletteId]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync selected mode with actual theme when it changes
   useEffect(() => {
-    if (mode && mode !== selectedMode) {
-      setSelectedMode(mode);
-      setTheme(mode);
+    if (theme && theme !== selectedMode) {
+      setSelectedMode(theme as ThemeMode);
     }
-  }, [mode, selectedMode, setTheme]);
+  }, [theme, selectedMode]);
 
   const persistTheme = async (payload: {
     themePalette?: ThemePresetId;
@@ -87,20 +79,28 @@ export function ThemePreferencesPanel({
   };
 
   const handlePaletteSelect = async (id: ThemePresetId) => {
-    if (id === paletteId) {
-      return;
-    }
+    // Apply the palette change immediately (synchronously)
     setPaletteId(id);
-    await persistTheme({ themePalette: id, themeMode: selectedMode });
+    // Then persist to server asynchronously without waiting
+    persistTheme({
+      themePalette: id,
+      themeMode: (theme as ThemeMode) ?? "light",
+    });
   };
 
   const handleModeSelect = async (modeValue: ThemeMode) => {
-    if (modeValue === selectedMode) {
+    if (modeValue === theme) {
       return;
     }
-    setSelectedMode(modeValue);
+    // Apply the theme change immediately
     setTheme(modeValue);
-    await persistTheme({ themePalette: paletteId, themeMode: modeValue });
+    // Then persist to server asynchronously
+    setIsSaving(true);
+    try {
+      await persistTheme({ themePalette: paletteId, themeMode: modeValue });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -168,7 +168,7 @@ export function ThemePreferencesPanel({
           <div className="mt-4 flex flex-wrap gap-3">
             <Button
               type="button"
-              variant={selectedMode === "light" ? "default" : "outline"}
+              variant={theme === "light" ? "default" : "outline"}
               className="flex-1 min-w-[140px] justify-center gap-2 rounded-full"
               onClick={() => handleModeSelect("light")}
               disabled={isSaving}
@@ -178,7 +178,7 @@ export function ThemePreferencesPanel({
             </Button>
             <Button
               type="button"
-              variant={selectedMode === "dark" ? "default" : "outline"}
+              variant={theme === "dark" ? "default" : "outline"}
               className="flex-1 min-w-[140px] justify-center gap-2 rounded-full"
               onClick={() => handleModeSelect("dark")}
               disabled={isSaving}

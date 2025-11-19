@@ -1,15 +1,15 @@
 "use client";
 
+import { Pencil, Plus, Search, Table as TableIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search, Table as TableIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { colors } from "@/config/colors";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { TableForm } from "@/components/table-form";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { colors } from "@/config/colors";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -153,7 +153,7 @@ export default function TableManagementPage() {
             </div>
             <Button
               onClick={handleAdd}
-              className="text-white font-semibold shadow-md"
+              className="text-black dark:text-white font-semibold shadow-md"
             >
               <Plus className="mr-2 h-5 w-5" />
               Add Table

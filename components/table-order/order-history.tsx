@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Clock, Receipt } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const API_BASE_URL =
@@ -58,7 +57,7 @@ export function OrderHistory({
   const [history, setHistory] = useState<OrderHistoryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   useEffect(() => {
@@ -66,7 +65,7 @@ export function OrderHistory({
       try {
         const response = await fetch(
           `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/history`,
-          { credentials: "include" }
+          { credentials: "include" },
         );
 
         if (response.ok) {
@@ -138,14 +137,17 @@ export function OrderHistory({
 
   return (
     <div className="space-y-4">
-      <Card className="rounded-3xl border-0 bg-gradient-to-br from-primary to-primary/80 p-6 text-white shadow-xl">
-        <p className="text-xs uppercase tracking-[0.4em] text-white/70">
+      <Card className="rounded-3xl border-0 bg-gradient-to-br from-primary to-primary/80 p-6 text-black dark:text-white shadow-xl">
+        <p className="text-xs uppercase tracking-[0.4em] text-black dark:text-white/70">
           Total Unpaid
         </p>
-        <p className="mt-2 text-4xl font-bold">${history.grandTotal.toFixed(2)}</p>
+        <p className="mt-2 text-4xl font-bold">
+          ${history.grandTotal.toFixed(2)}
+        </p>
         <p className="mt-2 text-sm text-white/80">
-          {history.orderCount} {history.orderCount === 1 ? "order" : "orders"} across{" "}
-          {history.sessions.length} {history.sessions.length === 1 ? "session" : "sessions"}
+          {history.orderCount} {history.orderCount === 1 ? "order" : "orders"}{" "}
+          across {history.sessions.length}{" "}
+          {history.sessions.length === 1 ? "session" : "sessions"}
         </p>
       </Card>
 
@@ -172,7 +174,8 @@ export function OrderHistory({
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {session.orders.length}{" "}
-                      {session.orders.length === 1 ? "order" : "orders"} submitted
+                      {session.orders.length === 1 ? "order" : "orders"}{" "}
+                      submitted
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -249,4 +252,3 @@ export function OrderHistory({
     </div>
   );
 }
-

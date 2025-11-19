@@ -26,7 +26,7 @@ export default async function AdminLoginPage() {
         <Card className="border-2 shadow-2xl">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full shadow-lg">
-              <Shield className="h-10 w-10 text-white" />
+              <Shield className="h-10 w-10 text-black dark:text-white" />
             </div>
             <div>
               <CardTitle className="text-3xl font-bold">Admin Portal</CardTitle>

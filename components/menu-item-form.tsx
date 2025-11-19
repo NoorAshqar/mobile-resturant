@@ -1,12 +1,12 @@
 "use client";
 
+import { Image as ImageIcon, Loader2, Save } from "lucide-react";
 import { useState } from "react";
-import { Loader2, Save, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Input } from "./ui/input";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -253,7 +253,7 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              className="flex-1 text-white font-semibold"
+              className="flex-1 text-black dark:text-white font-semibold"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

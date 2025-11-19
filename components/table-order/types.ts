@@ -48,7 +48,7 @@ export interface TableOrderDetails {
 export type TableOrderPaymentStatus = "unpaid" | "pending" | "paid" | "failed";
 
 export interface TableOrderPayment {
-  method: "cash" | "card" | "lahtha" | null;
+  method: "cash" | "card" | "lahza" | null;
   status: TableOrderPaymentStatus;
   reference: string | null;
 }

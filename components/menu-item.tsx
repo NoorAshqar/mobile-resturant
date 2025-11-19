@@ -89,7 +89,7 @@ export function MenuItem({
                 size="sm"
                 onClick={handleAdd}
                 disabled={disabled}
-                className="h-9 px-4 text-white font-semibold shadow-md transition-all hover:shadow-lg"
+                className="h-9 px-4 text-black dark:text-white font-semibold shadow-md transition-all hover:shadow-lg"
               >
                 <Plus className="mr-1 h-4 w-4" />
                 Add
@@ -112,7 +112,7 @@ export function MenuItem({
                   size="sm"
                   onClick={handleAdd}
                   disabled={disabled}
-                  className="h-9 w-9 p-0 text-white shadow-md"
+                  className="h-9 w-9 p-0 text-black dark:text-white shadow-md"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>

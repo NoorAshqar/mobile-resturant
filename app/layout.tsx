@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { HeaderWrapper } from "@/components/header-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Header } from "@/components/header";
 import { ThemeSettingsProvider } from "@/components/theme/theme-settings-provider";
 
 import "./globals.css";
@@ -27,7 +27,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) { 
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -36,7 +36,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ThemeSettingsProvider>
-            <Header />
+            <HeaderWrapper />
             {children}
           </ThemeSettingsProvider>
         </ThemeProvider>

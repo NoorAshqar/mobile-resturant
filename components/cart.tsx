@@ -34,7 +34,7 @@ export function Cart({ items, onRemoveItem, onCheckout }: CartProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button className="fixed bottom-6 right-6 z-50 h-16 w-16 rounded-full shadow-2xl transition-all hover:scale-110 text-white">
+        <Button className="fixed bottom-6 right-6 z-50 h-16 w-16 rounded-full shadow-2xl transition-all hover:scale-110 text-black dark:text-white">
           <ShoppingCart className="h-7 w-7" />
           {totalItems > 0 ? (
             <Badge className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full p-0 text-sm font-bold border-2">
@@ -111,7 +111,7 @@ export function Cart({ items, onRemoveItem, onCheckout }: CartProps) {
 
                 <Button
                   onClick={onCheckout}
-                  className="w-full h-14 text-lg font-bold text-white shadow-lg hover:shadow-xl"
+                  className="w-full h-14 text-lg font-bold text-black dark:text-white shadow-lg hover:shadow-xl"
                 >
                   Proceed to Checkout
                 </Button>

@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Loader2, Save, Store } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, Store } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemePreferencesPanel } from "@/components/admin/theme-preferences";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -60,8 +60,10 @@ export default function RestaurantSettingsPage() {
               name: data.restaurant.name,
               cuisine: data.restaurant.cuisine,
               status: data.restaurant.status,
-              lahzaPublicKey: data.restaurant.paymentConfig?.lahza?.publicKey ?? "",
-              lahzaCurrency: data.restaurant.paymentConfig?.lahza?.currency ?? "ILS",
+              lahzaPublicKey:
+                data.restaurant.paymentConfig?.lahza?.publicKey ?? "",
+              lahzaCurrency:
+                data.restaurant.paymentConfig?.lahza?.currency ?? "ILS",
             });
           }
         }
@@ -221,7 +223,7 @@ export default function RestaurantSettingsPage() {
 
             <div className="space-y-2">
               <label htmlFor="lahzaPublicKey" className="text-sm font-semibold">
-                Lahtha Public Key
+                Lahza Public Key
               </label>
               <Input
                 id="lahzaPublicKey"
@@ -233,13 +235,14 @@ export default function RestaurantSettingsPage() {
                 disabled={isSubmitting}
               />
               <p className="text-xs text-muted-foreground">
-                This key powers the Lahtha popup shown to customers on the order page.
+                This key powers the Lahza popup shown to customers on the order
+                page.
               </p>
             </div>
 
             <div className="space-y-2">
               <label htmlFor="lahzaCurrency" className="text-sm font-semibold">
-                Lahtha Currency
+                Lahza Currency
               </label>
               <Input
                 id="lahzaCurrency"
@@ -255,7 +258,7 @@ export default function RestaurantSettingsPage() {
             <div className="pt-4">
               <Button
                 type="submit"
-                className="w-full text-white font-semibold"
+                className="w-full text-black dark:text-white font-semibold"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

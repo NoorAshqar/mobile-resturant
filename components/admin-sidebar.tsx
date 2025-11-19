@@ -1,17 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  UtensilsCrossed,
+  Receipt,
   Settings,
   Store,
   Table as TableIcon,
-  Receipt,
+  UtensilsCrossed,
 } from "lucide-react";
-
-import { colors } from "@/config/colors";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navigation = [
   {
@@ -49,7 +47,7 @@ export function AdminSidebar() {
       {/* Logo/Brand */}
       <div className="flex h-20 items-center gap-3 border-b-2 px-6">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl shadow-md">
-          <Store className="h-7 w-7 text-white" />
+          <Store className="h-7 w-7 text-black dark:text-white" />
         </div>
         <div>
           <h1 className="text-lg font-bold">Admin Panel</h1>
