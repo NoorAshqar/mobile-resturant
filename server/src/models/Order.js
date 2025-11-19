@@ -1,5 +1,22 @@
 const { Schema, model, models } = require("mongoose");
 
+const OrderItemAddonSchema = new Schema({
+  addon: {
+    type: Schema.Types.ObjectId,
+    ref: "Addon",
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+});
+
 const OrderItemSchema = new Schema({
   menuItem: {
     type: Schema.Types.ObjectId,
@@ -21,6 +38,7 @@ const OrderItemSchema = new Schema({
     min: 1,
     default: 1,
   },
+  addons: [OrderItemAddonSchema],
 });
 
 const OrderSchema = new Schema(

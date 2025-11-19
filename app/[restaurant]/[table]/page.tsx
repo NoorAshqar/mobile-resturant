@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { AddonSelector } from "@/components/addon-selector";
 import { MenuItemType } from "@/components/menu-item";
 import { TableMenuView } from "@/components/table-order/menu-view";
 import { TableOrderSummary } from "@/components/table-order/order-summary";
@@ -34,6 +35,9 @@ export default function TableOrderPage() {
   const [activeView, setActiveView] = useState<ActiveView>("menu");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isLahzaReady, setIsLahzaReady] = useState(false);
+  const [showAddonSelector, setShowAddonSelector] = useState(false);
+  const [selectedMenuItemForAddons, setSelectedMenuItemForAddons] = useState<MenuItemType | null>(null);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -119,7 +123,7 @@ export default function TableOrderPage() {
 
   const isEditableOrder = order?.status === "building";
 
-  const handleAddItem = async (menuItemId: string) => {
+  const handleAddItem = async (menuItemId: string, addonIds: string[] = []) => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/items`,
@@ -128,7 +132,7 @@ export default function TableOrderPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ menuItemId, quantity: 1 }),
+          body: JSON.stringify({ menuItemId, quantity: 1, addonIds }),
           credentials: "include",
         },
       );
@@ -137,12 +141,32 @@ export default function TableOrderPage() {
         const data = await response.json();
         setOrder(data.order);
         toast.success("Item added to order");
+        setShowAddonSelector(false);
+        setSelectedMenuItemForAddons(null);
+        setSelectedAddonIds([]);
       } else {
         toast.error("Failed to add item");
       }
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong");
+    }
+  };
+
+  const handleMenuItemAdd = (menuItemId: string) => {
+    const menuItem = menuItems.find((item) => item.id === menuItemId);
+    if (menuItem && menuItem.addons && menuItem.addons.length > 0) {
+      setSelectedMenuItemForAddons(menuItem);
+      setSelectedAddonIds([]);
+      setShowAddonSelector(true);
+    } else {
+      handleAddItem(menuItemId);
+    }
+  };
+
+  const handleAddonConfirm = () => {
+    if (selectedMenuItemForAddons) {
+      handleAddItem(selectedMenuItemForAddons.id, selectedAddonIds);
     }
   };
 
@@ -500,7 +524,7 @@ export default function TableOrderPage() {
                 onSearchChange={setSearchTerm}
                 filteredMenuItems={filteredMenuItems}
                 orderItemsByMenuId={orderItemsByMenuId}
-                onAddMenuItem={handleAddItem}
+                onAddMenuItem={handleMenuItemAdd}
                 onChangeQuantity={handleUpdateQuantity}
                 onRemoveItem={handleRemoveItem}
                 isVisible={activeView === "menu"}
@@ -534,6 +558,22 @@ export default function TableOrderPage() {
           </div>
         </div>
       </div>
+
+      {selectedMenuItemForAddons && (
+        <AddonSelector
+          addons={selectedMenuItemForAddons.addons || []}
+          selectedAddonIds={selectedAddonIds}
+          onSelectionChange={setSelectedAddonIds}
+          isOpen={showAddonSelector}
+          onClose={() => {
+            setShowAddonSelector(false);
+            setSelectedMenuItemForAddons(null);
+            setSelectedAddonIds([]);
+          }}
+          onConfirm={handleAddonConfirm}
+          itemName={selectedMenuItemForAddons.name}
+        />
+      )}
     </RestaurantThemeWrapper>
   );
 }

@@ -4,6 +4,7 @@ const authMiddleware = require("../middleware/auth");
 const Restaurant = require("../models/Restaurant");
 const Table = require("../models/Table");
 const MenuItem = require("../models/MenuItem");
+const Addon = require("../models/Addon");
 const Order = require("../models/Order");
 
 const router = express.Router();
@@ -26,10 +27,14 @@ const allowedPaymentStatuses = ["unpaid", "pending", "paid", "failed"];
 const allowedPaymentMethods = ["cash", "card", "lahza"];
 
 function calculateTotals(order) {
-  const subtotal = order.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const subtotal = order.items.reduce((sum, item) => {
+    const itemPrice = item.price * item.quantity;
+    const addonsPrice = (item.addons || []).reduce(
+      (addonSum, addon) => addonSum + addon.price * item.quantity,
+      0,
+    );
+    return sum + itemPrice + addonsPrice;
+  }, 0);
   order.subtotal = subtotal;
   order.tax = subtotal * TAX_RATE;
   order.total = order.subtotal + order.tax;
@@ -51,14 +56,26 @@ function formatOrderResponse(order, restaurant, table) {
       number: table.number,
       capacity: table.capacity,
     },
-    items: order.items.map((item) => ({
-      id: item._id.toString(),
-      menuItemId: item.menuItem.toString(),
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      subtotal: item.price * item.quantity,
-    })),
+    items: order.items.map((item) => {
+      const addonsPrice = (item.addons || []).reduce(
+        (sum, addon) => sum + addon.price,
+        0,
+      );
+      const itemSubtotal = (item.price + addonsPrice) * item.quantity;
+      return {
+        id: item._id.toString(),
+        menuItemId: item.menuItem.toString(),
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        addons: (item.addons || []).map((addon) => ({
+          id: addon.addon?.toString() || addon._id?.toString(),
+          name: addon.name,
+          price: addon.price,
+        })),
+        subtotal: itemSubtotal,
+      };
+    }),
     subtotal: order.subtotal,
     tax: order.tax,
     total: order.total,
@@ -190,14 +207,26 @@ router.get(
 
       const formattedOrders = orders.map((order) => ({
         id: order._id.toString(),
-        items: order.items.map((item) => ({
-          id: item._id.toString(),
-          menuItemId: item.menuItem.toString(),
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity,
-        })),
+        items: order.items.map((item) => {
+          const addonsPrice = (item.addons || []).reduce(
+            (sum, addon) => sum + addon.price,
+            0,
+          );
+          const itemSubtotal = (item.price + addonsPrice) * item.quantity;
+          return {
+            id: item._id.toString(),
+            menuItemId: item.menuItem.toString(),
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            addons: (item.addons || []).map((addon) => ({
+              id: addon.addon?.toString() || addon._id?.toString(),
+              name: addon.name,
+              price: addon.price,
+            })),
+            subtotal: itemSubtotal,
+          };
+        }),
         subtotal: order.subtotal,
         tax: order.tax,
         total: order.total,
@@ -273,14 +302,26 @@ router.get("/:restaurantName/:tableNumber/history", async (req, res) => {
       const session = sessionMap.get(key);
       session.orders.push({
         id: order._id.toString(),
-        items: order.items.map((item) => ({
-          id: item._id.toString(),
-          menuItemId: item.menuItem.toString(),
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity,
-        })),
+        items: order.items.map((item) => {
+          const addonsPrice = (item.addons || []).reduce(
+            (sum, addon) => sum + addon.price,
+            0,
+          );
+          const itemSubtotal = (item.price + addonsPrice) * item.quantity;
+          return {
+            id: item._id.toString(),
+            menuItemId: item.menuItem.toString(),
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            addons: (item.addons || []).map((addon) => ({
+              id: addon.addon?.toString() || addon._id?.toString(),
+              name: addon.name,
+              price: addon.price,
+            })),
+            subtotal: itemSubtotal,
+          };
+        }),
         subtotal: order.subtotal,
         tax: order.tax,
         total: order.total,
@@ -401,7 +442,7 @@ router.get("/:restaurantName/:tableNumber", async (req, res) => {
 router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
   try {
     const { restaurantName, tableNumber } = req.params;
-    const { menuItemId, quantity = 1 } = req.body ?? {};
+    const { menuItemId, quantity = 1, addonIds = [] } = req.body ?? {};
 
     if (!menuItemId) {
       return res.status(400).json({ message: "Menu item ID is required." });
@@ -445,6 +486,16 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
         .json({ message: "Menu item not found or unavailable." });
     }
 
+    // Fetch addons if provided
+    let selectedAddons = [];
+    if (Array.isArray(addonIds) && addonIds.length > 0) {
+      selectedAddons = await Addon.find({
+        _id: { $in: addonIds },
+        restaurant: restaurant._id,
+        available: true,
+      }).lean();
+    }
+
     // Find or create editable order
     let order = await Order.findOne({
       restaurant: restaurant._id,
@@ -478,10 +529,25 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
       ensureSessionKey(order);
     }
 
-    // Check if item already exists in order
-    const existingItemIndex = order.items.findIndex(
-      (item) => item.menuItem.toString() === menuItemId,
-    );
+    // Check if item already exists in order with same addons
+    // For simplicity, we'll add as a new item if addons differ
+    const addonIdsString = selectedAddons.map((a) => a._id.toString()).sort().join(",");
+    const existingItemIndex = order.items.findIndex((item) => {
+      const itemAddonIds = (item.addons || [])
+        .map((a) => a.addon?.toString() || a._id?.toString())
+        .sort()
+        .join(",");
+      return (
+        item.menuItem.toString() === menuItemId &&
+        itemAddonIds === addonIdsString
+      );
+    });
+
+    const addonsForItem = selectedAddons.map((addon) => ({
+      addon: addon._id,
+      name: addon.name,
+      price: addon.price,
+    }));
 
     if (existingItemIndex >= 0) {
       // Update quantity
@@ -493,6 +559,7 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
         name: menuItem.name,
         price: menuItem.price,
         quantity: parseInt(quantity),
+        addons: addonsForItem,
       });
     }
 

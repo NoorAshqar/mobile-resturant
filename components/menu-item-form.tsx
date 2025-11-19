@@ -1,7 +1,7 @@
 "use client";
 
 import { Image as ImageIcon, Loader2, Save } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "./ui/button";
@@ -10,6 +10,15 @@ import { Input } from "./ui/input";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+
+interface Addon {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  available: boolean;
+}
 
 interface MenuItemData {
   id?: string;
@@ -21,6 +30,7 @@ interface MenuItemData {
   popular: boolean;
   vegetarian: boolean;
   available: boolean;
+  addons?: Addon[];
 }
 
 interface MenuItemFormProps {
@@ -40,9 +50,37 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
       popular: false,
       vegetarian: false,
       available: true,
+      addons: [],
     },
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableAddons, setAvailableAddons] = useState<Addon[]>([]);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>(
+    item?.addons?.map((a) => a.id) || [],
+  );
+
+  useEffect(() => {
+    const fetchAddons = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/addon`, {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableAddons(data.addons || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch addons", error);
+      }
+    };
+    fetchAddons();
+  }, []);
+
+  useEffect(() => {
+    if (item?.addons) {
+      setSelectedAddonIds(item.addons.map((a) => a.id));
+    }
+  }, [item]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -86,12 +124,19 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
 
       const method = item?.id ? "PUT" : "POST";
 
+      // Prepare request body without the addons property from formState
+      const { addons: _, ...formDataWithoutAddons } = formState;
+      const requestBody = {
+        ...formDataWithoutAddons,
+        addons: selectedAddonIds,
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formState),
+        body: JSON.stringify(requestBody),
         credentials: "include",
       });
 
@@ -105,8 +150,12 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
       toast.success(item?.id ? "Menu item updated!" : "Menu item created!");
       onSuccess();
     } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong. Please try again.");
+      console.error("Menu item form error:", error);
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        toast.error("Cannot connect to server. Please check if the server is running.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -248,6 +297,51 @@ export function MenuItemForm({ item, onSuccess, onCancel }: MenuItemFormProps) {
               />
               <span className="text-sm font-semibold">Available</span>
             </label>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Available Addons</label>
+            <div className="border rounded-md p-4 max-h-48 overflow-y-auto space-y-2">
+              {availableAddons.length > 0 ? (
+                availableAddons.map((addon) => (
+                  <label
+                    key={addon.id}
+                    className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAddonIds.includes(addon.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAddonIds([...selectedAddonIds, addon.id]);
+                        } else {
+                          setSelectedAddonIds(
+                            selectedAddonIds.filter((id) => id !== addon.id),
+                          );
+                        }
+                      }}
+                      disabled={isSubmitting || !addon.available}
+                      className="h-4 w-4 rounded"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium">{addon.name}</span>
+                      {addon.category && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({addon.category})
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-500 ml-2">
+                        +${addon.price.toFixed(2)}
+                      </span>
+                    </div>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No addons available. Create addons first.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

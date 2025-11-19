@@ -7,6 +7,7 @@ import {
   Store,
   Table as TableIcon,
   UtensilsCrossed,
+  PlusCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,6 +22,11 @@ const navigation = [
     name: "Menu Items",
     href: "/admin/dashboard/menu",
     icon: UtensilsCrossed,
+  },
+  {
+    name: "Addons",
+    href: "/admin/dashboard/addons",
+    icon: PlusCircle,
   },
   {
     name: "Tables",

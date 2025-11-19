@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
 const menuRoutes = require("./routes/menu");
+const addonRoutes = require("./routes/addon");
 const restaurantRoutes = require("./routes/restaurant");
 const tableRoutes = require("./routes/table");
 const orderRoutes = require("./routes/order");
@@ -37,6 +38,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/menu", menuRoutes);
+app.use("/api/addon", addonRoutes);
 app.use("/api/restaurant", restaurantRoutes);
 app.use("/api/table", tableRoutes);
 app.use("/api/order", orderRoutes);

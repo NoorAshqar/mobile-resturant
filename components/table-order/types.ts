@@ -2,12 +2,19 @@
 
 export type ThemeMode = "light" | "dark";
 
+export interface TableOrderItemAddon {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface TableOrderItem {
   id: string;
   menuItemId: string;
   name: string;
   price: number;
   quantity: number;
+  addons?: TableOrderItemAddon[];
   subtotal: number;
 }
 

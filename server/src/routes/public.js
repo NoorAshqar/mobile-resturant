@@ -2,6 +2,7 @@ const express = require("express");
 
 const Restaurant = require("../models/Restaurant");
 const MenuItem = require("../models/MenuItem");
+const Addon = require("../models/Addon");
 
 const router = express.Router();
 
@@ -26,6 +27,10 @@ router.get("/restaurant/:name", async (req, res) => {
       restaurant: restaurant._id,
       available: true,
     })
+      .populate({
+        path: "addons",
+        match: { available: true },
+      })
       .sort({ category: 1, name: 1 })
       .lean();
 
@@ -46,6 +51,13 @@ router.get("/restaurant/:name", async (req, res) => {
         category: item.category,
         popular: item.popular,
         vegetarian: item.vegetarian,
+        addons: (item.addons || []).map((addon) => ({
+          id: addon._id.toString(),
+          name: addon.name,
+          description: addon.description || "",
+          price: addon.price,
+          category: addon.category || "",
+        })),
       })),
     };
 

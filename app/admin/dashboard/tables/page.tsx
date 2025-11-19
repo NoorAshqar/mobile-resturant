@@ -1,9 +1,10 @@
 "use client";
 
-import { Pencil, Plus, Search, Table as TableIcon, Trash2 } from "lucide-react";
+import { Pencil, Plus, QrCode, Search, Table as TableIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { QRCodeModal } from "@/components/qr-code-modal";
 import { TableForm } from "@/components/table-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,9 @@ export default function TableManagementPage() {
   const [editingTable, setEditingTable] = useState<Table | undefined>(
     undefined,
   );
+  const [restaurantSlug, setRestaurantSlug] = useState<string>("");
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedTableForQR, setSelectedTableForQR] = useState<number | null>(null);
 
   const fetchTables = async () => {
     try {
@@ -53,7 +57,24 @@ export default function TableManagementPage() {
 
   useEffect(() => {
     fetchTables();
+    fetchRestaurantInfo();
   }, []);
+
+  const fetchRestaurantInfo = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.restaurant?.slug) {
+          setRestaurantSlug(data.restaurant.slug);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch restaurant info", error);
+    }
+  };
 
   useEffect(() => {
     const query = searchQuery.toLowerCase();
@@ -109,6 +130,15 @@ export default function TableManagementPage() {
   const handleFormCancel = () => {
     setShowForm(false);
     setEditingTable(undefined);
+  };
+
+  const handleShowQR = (tableNumber: number) => {
+    if (!restaurantSlug) {
+      toast.error("Restaurant information not loaded. Please try again.");
+      return;
+    }
+    setSelectedTableForQR(tableNumber);
+    setShowQRModal(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -216,6 +246,15 @@ export default function TableManagementPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => handleShowQR(table.number)}
+                        className="border-2"
+                        title="Generate QR Code"
+                      >
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleEdit(table)}
                         className="flex-1 border-2"
                       >
@@ -256,6 +295,18 @@ export default function TableManagementPage() {
           table={editingTable}
           onSuccess={handleFormSuccess}
           onCancel={handleFormCancel}
+        />
+      )}
+
+      {selectedTableForQR && restaurantSlug && (
+        <QRCodeModal
+          isOpen={showQRModal}
+          onClose={() => {
+            setShowQRModal(false);
+            setSelectedTableForQR(null);
+          }}
+          tableNumber={selectedTableForQR}
+          restaurantSlug={restaurantSlug}
         />
       )}
     </div>

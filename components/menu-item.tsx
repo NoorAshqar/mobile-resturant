@@ -7,6 +7,14 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 
+export interface Addon {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category?: string;
+}
+
 export interface MenuItemType {
   id: string;
   name: string;
@@ -16,6 +24,7 @@ export interface MenuItemType {
   category: string;
   popular?: boolean;
   vegetarian?: boolean;
+  addons?: Addon[];
 }
 
 interface MenuItemProps {
@@ -24,6 +33,7 @@ interface MenuItemProps {
   onAdd: () => void;
   onRemove: () => void;
   disabled?: boolean;
+  onAddWithAddons?: (selectedAddonIds: string[]) => void;
 }
 
 export function MenuItem({
@@ -32,12 +42,19 @@ export function MenuItem({
   onAdd,
   onRemove,
   disabled = false,
+  onAddWithAddons,
 }: MenuItemProps) {
   const handleAdd = () => {
     if (disabled) {
       return;
     }
-    onAdd();
+    // If item has addons and onAddWithAddons is provided, use that instead
+    if (item.addons && item.addons.length > 0 && onAddWithAddons) {
+      // For now, just call onAdd - the parent will handle showing the addon selector
+      onAdd();
+    } else {
+      onAdd();
+    }
   };
 
   const handleRemove = () => {

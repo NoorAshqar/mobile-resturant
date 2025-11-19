@@ -33,6 +33,11 @@ interface SubmittedOrder {
     name: string;
     price: number;
     quantity: number;
+    addons?: Array<{
+      id: string;
+      name: string;
+      price: number;
+    }>;
     subtotal: number;
   }>;
   subtotal: number;
@@ -244,6 +249,15 @@ export function TableOrderSummary({
                           <p className="text-xs text-muted-foreground">
                             ${item.price.toFixed(2)} each
                           </p>
+                          {item.addons && item.addons.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {item.addons.map((addon) => (
+                                <p key={addon.id} className="text-xs text-muted-foreground/80">
+                                  + {addon.name} (+${addon.price.toFixed(2)})
+                                </p>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <span className="text-sm font-bold text-foreground">
                           ${item.subtotal.toFixed(2)}
@@ -357,6 +371,15 @@ export function TableOrderSummary({
                                 <p className="text-xs text-muted-foreground">
                                   ${item.price.toFixed(2)} each
                                 </p>
+                                {item.addons && item.addons.length > 0 && (
+                                  <div className="mt-1 space-y-0.5">
+                                    {item.addons.map((addon) => (
+                                      <p key={addon.id} className="text-xs text-muted-foreground/80">
+                                        + {addon.name} (+${addon.price.toFixed(2)})
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <p className="text-sm font-bold text-foreground">
                                 ${item.subtotal.toFixed(2)}
