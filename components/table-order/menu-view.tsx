@@ -19,6 +19,7 @@ interface TableMenuViewProps {
   onRemoveItem: (orderItemId: string) => void;
   isVisible: boolean;
   canEdit: boolean;
+  lockMessage?: string;
 }
 
 export function TableMenuView({
@@ -34,6 +35,7 @@ export function TableMenuView({
   onRemoveItem,
   isVisible,
   canEdit,
+  lockMessage,
 }: TableMenuViewProps) {
   const handleIncrement = (menuItemId: string, orderItemId?: string, quantity?: number) => {
     if (!orderItemId || quantity === undefined) {
@@ -113,10 +115,11 @@ export function TableMenuView({
           <div className="mt-6 rounded-2xl border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2 font-semibold text-foreground">
               <Lock className="h-4 w-4" />
-              Order submitted
+              {lockMessage ?? "Order submitted"}
             </div>
             <p className="mt-1">
-              This ticket is already in the kitchen. Add another dish to automatically start a fresh round for this table.
+              {lockMessage ??
+                "This ticket is already in the kitchen. Add another dish to automatically start a fresh round for this table."}
             </p>
           </div>
         ) : null}

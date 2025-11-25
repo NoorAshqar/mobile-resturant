@@ -28,6 +28,7 @@ export default function TableOrderPage() {
   const tableNumber = params.table as string;
 
   const [order, setOrder] = useState<TableOrderDetails | null>(null);
+  const [submittedOrders, setSubmittedOrders] = useState<any[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItemType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +39,25 @@ export default function TableOrderPage() {
   const [showAddonSelector, setShowAddonSelector] = useState(false);
   const [selectedMenuItemForAddons, setSelectedMenuItemForAddons] = useState<MenuItemType | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [flowConfig, setFlowConfig] = useState({
+    orderingEnabled: true,
+    paymentEnabled: true,
+    requirePaymentBeforeOrder: false,
+  });
+  const [tipsConfig, setTipsConfig] = useState<{ enabled: boolean; percentages: number[] }>({ enabled: false, percentages: [] });
+
+  const syncFlowFromOrder = (orderData: TableOrderDetails | null) => {
+    const flow = orderData?.restaurant.flowConfig;
+    setFlowConfig({
+      orderingEnabled: flow?.orderingEnabled ?? true,
+      paymentEnabled: flow?.paymentEnabled ?? true,
+      requirePaymentBeforeOrder: flow?.requirePaymentBeforeOrder ?? false,
+    });
+    setTipsConfig({
+      enabled: flow?.tipsEnabled ?? false,
+      percentages: flow?.tipsPercentage ?? [],
+    });
+  };
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -50,6 +70,7 @@ export default function TableOrderPage() {
         if (response.ok) {
           const data = await response.json();
           setOrder(data.order);
+          syncFlowFromOrder(data.order);
         } else {
           setOrder(null);
         }
@@ -58,6 +79,24 @@ export default function TableOrderPage() {
         toast.error("Failed to load order");
       } finally {
         setIsLoading(false);
+      }
+    };
+
+    const fetchSubmittedOrders = async () => {
+      if (!order?.sessionKey) return;
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${order.sessionKey}`,
+          { credentials: "include" },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setSubmittedOrders(data.orders || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch submitted orders:", error);
       }
     };
 
@@ -81,6 +120,27 @@ export default function TableOrderPage() {
     fetchOrder();
     fetchMenuItems();
   }, [restaurantName, tableNumber]);
+
+  useEffect(() => {
+    if (order?.sessionKey) {
+      const fetchSubmittedOrders = async () => {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${order.sessionKey}`,
+            { credentials: "include" },
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            setSubmittedOrders(data.orders || []);
+          }
+        } catch (error) {
+          console.error("Failed to fetch submitted orders:", error);
+        }
+      };
+      fetchSubmittedOrders();
+    }
+  }, [order?.sessionKey, restaurantName, tableNumber]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -122,8 +182,19 @@ export default function TableOrderPage() {
   }, []);
 
   const isEditableOrder = order?.status === "building";
+  const isOrderingEnabled = flowConfig.orderingEnabled;
+  const canEdit = isEditableOrder && isOrderingEnabled;
+  const lockMessage = !isOrderingEnabled
+    ? "Ordering is currently disabled for this restaurant."
+    : !isEditableOrder
+      ? "Order submitted"
+      : undefined;
 
   const handleAddItem = async (menuItemId: string, addonIds: string[] = []) => {
+    if (!flowConfig.orderingEnabled) {
+      toast.error("Ordering is currently disabled.");
+      return;
+    }
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/items`,
@@ -140,6 +211,7 @@ export default function TableOrderPage() {
       if (response.ok) {
         const data = await response.json();
         setOrder(data.order);
+        syncFlowFromOrder(data.order);
         toast.success("Item added to order");
         setShowAddonSelector(false);
         setSelectedMenuItemForAddons(null);
@@ -171,6 +243,10 @@ export default function TableOrderPage() {
   };
 
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    if (!flowConfig.orderingEnabled) {
+      toast.error("Ordering is currently disabled.");
+      return;
+    }
     if (!order || !isEditableOrder) {
       toast.error("Order already submitted to kitchen.");
       return;
@@ -196,6 +272,7 @@ export default function TableOrderPage() {
       if (response.ok) {
         const data = await response.json();
         setOrder(data.order);
+        syncFlowFromOrder(data.order);
       } else {
         toast.error("Failed to update quantity");
       }
@@ -206,6 +283,10 @@ export default function TableOrderPage() {
   };
 
   const handleRemoveItem = async (itemId: string) => {
+    if (!flowConfig.orderingEnabled) {
+      toast.error("Ordering is currently disabled.");
+      return;
+    }
     if (!order || !isEditableOrder) {
       toast.error("Order already submitted to kitchen.");
       return;
@@ -222,6 +303,7 @@ export default function TableOrderPage() {
       if (response.ok) {
         const data = await response.json();
         setOrder(data.order);
+        syncFlowFromOrder(data.order);
         toast.success("Item removed");
       } else {
         toast.error("Failed to remove item");
@@ -266,7 +348,7 @@ export default function TableOrderPage() {
     () =>
       new Map(
         order?.items.map((item) => [item.menuItemId, item as TableOrderItem]) ??
-          [],
+        [],
       ),
     [order],
   );
@@ -294,6 +376,11 @@ export default function TableOrderPage() {
       return;
     }
 
+    if (!flowConfig.orderingEnabled) {
+      toast.error("Ordering is currently disabled.");
+      return;
+    }
+
     if (!isEditableOrder) {
       toast.info("Order already sent to the kitchen.");
       return;
@@ -301,6 +388,15 @@ export default function TableOrderPage() {
 
     if (order.items.length === 0) {
       toast.error("Add at least one item before sending the order.");
+      return;
+    }
+
+    if (
+      flowConfig.requirePaymentBeforeOrder &&
+      flowConfig.paymentEnabled &&
+      (order.payment?.status ?? "unpaid") !== "paid"
+    ) {
+      toast.error("Please complete payment before sending the order.");
       return;
     }
 
@@ -331,6 +427,17 @@ export default function TableOrderPage() {
       if (newOrderResponse.ok) {
         const newOrderData = await newOrderResponse.json();
         setOrder(newOrderData.order);
+        syncFlowFromOrder(newOrderData.order);
+
+        // Refresh submitted orders
+        const submittedResponse = await fetch(
+          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${newOrderData.order.sessionKey}`,
+          { credentials: "include" },
+        );
+        if (submittedResponse.ok) {
+          const submittedData = await submittedResponse.json();
+          setSubmittedOrders(submittedData.orders || []);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -339,7 +446,7 @@ export default function TableOrderPage() {
   };
 
   const handleSummaryQuantityChange = (itemId: string, quantity: number) => {
-    if (!isEditableOrder) {
+    if (!canEdit) {
       return;
     }
     if (quantity <= 0) {
@@ -354,9 +461,14 @@ export default function TableOrderPage() {
   const lahzaCurrency =
     orderLahzaConfig?.currency ?? DEFAULT_LAHZA_CURRENCY ?? "ILS";
 
-  const handleLahzaPayment = () => {
+  const handleLahzaPayment = (tipAmount: number = 0) => {
     if (!order) {
       toast.error("Order not found.");
+      return;
+    }
+
+    if (!flowConfig.paymentEnabled) {
+      toast.error("Payments are disabled for this restaurant.");
       return;
     }
 
@@ -375,7 +487,10 @@ export default function TableOrderPage() {
       return;
     }
 
-    const amountInMinorUnits = Math.round(order.total * 100);
+    const submittedTotal = submittedOrders.reduce((sum, o) => sum + o.total, 0);
+    const grandTotal = order.total + submittedTotal + tipAmount;
+
+    const amountInMinorUnits = Math.round(grandTotal * 100);
     if (!Number.isFinite(amountInMinorUnits) || amountInMinorUnits <= 0) {
       toast.error("Total must be greater than zero before paying.");
       return;
@@ -395,7 +510,8 @@ export default function TableOrderPage() {
           restaurantName: order.restaurant.name,
           tableId: order.table.id,
           tableNumber: order.table.number,
-          total: order.total,
+          total: grandTotal,
+          tip: tipAmount,
         },
         onSuccess: async (transaction) => {
           try {
@@ -411,7 +527,7 @@ export default function TableOrderPage() {
                   status: "paid",
                   method: "lahza",
                   reference: transaction.reference,
-                  metadata: transaction,
+                  metadata: { ...transaction, tipAmount },
                 }),
               },
             );
@@ -419,6 +535,7 @@ export default function TableOrderPage() {
             if (response.ok) {
               const data = await response.json();
               setOrder(data.order);
+              syncFlowFromOrder(data.order);
               toast.success("Payment completed successfully.");
             } else {
               toast.error("Payment completed but failed to sync order.");
@@ -503,11 +620,10 @@ export default function TableOrderPage() {
                 key={id}
                 type="button"
                 onClick={() => setActiveView(id as ActiveView)}
-                className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-                  activeView === id
-                    ? "bg-primary text-primary-foreground shadow-lg"
-                    : "text-muted-foreground"
-                }`}
+                className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeView === id
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground"
+                  }`}
               >
                 {label}
               </button>
@@ -528,7 +644,8 @@ export default function TableOrderPage() {
                 onChangeQuantity={handleUpdateQuantity}
                 onRemoveItem={handleRemoveItem}
                 isVisible={activeView === "menu"}
-                canEdit={isEditableOrder}
+                canEdit={canEdit}
+                lockMessage={lockMessage}
               />
             </div>
 
@@ -537,7 +654,7 @@ export default function TableOrderPage() {
                 order={order}
                 menuItemsById={menuItemsById}
                 isVisible={activeView === "summary"}
-                canEdit={isEditableOrder}
+                canEdit={canEdit}
                 onUpdateQuantity={handleSummaryQuantityChange}
                 onRemoveItem={handleRemoveItem}
                 onResumeOrdering={() => {
@@ -553,6 +670,9 @@ export default function TableOrderPage() {
                 isProcessingPayment={isProcessingPayment}
                 isLahzaReady={isLahzaReady}
                 isLahzaConfigured={Boolean(lahzaPublicKey)}
+                submittedOrders={submittedOrders}
+                flowConfig={flowConfig}
+                tipsConfig={tipsConfig}
               />
             </div>
           </div>

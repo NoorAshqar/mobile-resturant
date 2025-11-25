@@ -44,6 +44,7 @@ router.put("/", authMiddleware, async (req, res) => {
       themeMode,
       paymentConfig,
       lahza,
+      flowConfig,
     } = req.body ?? {};
 
     const restaurant = await Restaurant.findOne({ admin: adminId });
@@ -79,6 +80,26 @@ router.put("/", authMiddleware, async (req, res) => {
       }
     }
 
+    if (flowConfig) {
+      restaurant.flowConfig ??= {};
+      if (typeof flowConfig.orderingEnabled === "boolean") {
+        restaurant.flowConfig.orderingEnabled = flowConfig.orderingEnabled;
+      }
+      if (typeof flowConfig.paymentEnabled === "boolean") {
+        restaurant.flowConfig.paymentEnabled = flowConfig.paymentEnabled;
+      }
+      if (typeof flowConfig.requirePaymentBeforeOrder === "boolean") {
+        restaurant.flowConfig.requirePaymentBeforeOrder =
+          flowConfig.requirePaymentBeforeOrder;
+      }
+      if (typeof flowConfig.tipsEnabled === "boolean") {
+        restaurant.flowConfig.tipsEnabled = flowConfig.tipsEnabled;
+      }
+      if (Array.isArray(flowConfig.tipsPercentage)) {
+        restaurant.flowConfig.tipsPercentage = flowConfig.tipsPercentage;
+      }
+    }
+
     if (!restaurant.slug && restaurant.name) {
       restaurant.slug = slugify(restaurant.name);
     }
@@ -104,6 +125,14 @@ router.put("/", authMiddleware, async (req, res) => {
           currency: restaurant.paymentConfig?.lahza?.currency ?? "ILS",
           merchantId: restaurant.paymentConfig?.lahza?.merchantId ?? null,
         },
+      },
+      flowConfig: {
+        orderingEnabled: restaurant.flowConfig?.orderingEnabled ?? true,
+        paymentEnabled: restaurant.flowConfig?.paymentEnabled ?? true,
+        requirePaymentBeforeOrder:
+          restaurant.flowConfig?.requirePaymentBeforeOrder ?? false,
+        tipsEnabled: restaurant.flowConfig?.tipsEnabled ?? false,
+        tipsPercentage: restaurant.flowConfig?.tipsPercentage ?? [10, 15, 20],
       },
     };
 

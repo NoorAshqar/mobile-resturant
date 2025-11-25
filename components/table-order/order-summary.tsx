@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ImageWithFallback } from "@/components/figma/image-with-fallback";
 import { MenuItemType } from "@/components/menu-item";
@@ -21,6 +21,7 @@ import {
 } from "@/components/table-order/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -59,10 +60,17 @@ interface TableOrderSummaryProps {
   tableNumber: string;
   paymentStatus: TableOrderPaymentStatus;
   paymentReference: string | null;
-  onPayWithLahza: () => void;
+  onPayWithLahza: (tipAmount?: number) => void;
   isProcessingPayment: boolean;
   isLahzaReady: boolean;
   isLahzaConfigured: boolean;
+  submittedOrders: SubmittedOrder[];
+  flowConfig: {
+    orderingEnabled: boolean;
+    paymentEnabled: boolean;
+    requirePaymentBeforeOrder: boolean;
+  };
+  tipsConfig: { enabled: boolean; percentages: number[] };
 }
 
 export function TableOrderSummary({
@@ -82,9 +90,13 @@ export function TableOrderSummary({
   isProcessingPayment,
   isLahzaReady,
   isLahzaConfigured,
+  submittedOrders,
+  flowConfig,
+  tipsConfig,
 }: TableOrderSummaryProps) {
-  const [submittedOrders, setSubmittedOrders] = useState<SubmittedOrder[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [tipInput, setTipInput] = useState<string>("");
+  const { orderingEnabled, paymentEnabled, requirePaymentBeforeOrder } = flowConfig;
 
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) => {
@@ -98,34 +110,26 @@ export function TableOrderSummary({
     });
   };
 
-  useEffect(() => {
-    const fetchSubmittedOrders = async () => {
-      if (!order.sessionKey) return;
-
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${order.sessionKey}`,
-          { credentials: "include" },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setSubmittedOrders(data.orders || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch submitted orders:", error);
-      }
-    };
-
-    fetchSubmittedOrders();
-  }, [order.sessionKey, order.id, restaurantName, tableNumber]);
+  const isPaid = paymentStatus === "paid";
+  const displayItems = isPaid ? [] : order.items;
+  const displaySubmittedOrders = isPaid ? [] : submittedOrders;
+  const currentOrderTotal = isPaid ? 0 : order.total;
+  const currentOrderSubtotal = isPaid ? 0 : order.subtotal;
+  const currentOrderTax = isPaid ? 0 : order.tax;
 
   const grandTotal =
-    submittedOrders.reduce((sum, o) => sum + o.total, 0) + order.total;
+    displaySubmittedOrders.reduce((sum, o) => sum + o.total, 0) +
+    currentOrderTotal;
   const grandSubtotal =
-    submittedOrders.reduce((sum, o) => sum + o.subtotal, 0) + order.subtotal;
+    displaySubmittedOrders.reduce((sum, o) => sum + o.subtotal, 0) +
+    currentOrderSubtotal;
   const grandTax =
-    submittedOrders.reduce((sum, o) => sum + o.tax, 0) + order.tax;
+    displaySubmittedOrders.reduce((sum, o) => sum + o.tax, 0) + currentOrderTax;
+
+  const numericTip = Number.parseFloat(tipInput);
+  const tipAmount = Number.isFinite(numericTip) && numericTip > 0 ? numericTip : 0;
+
+  const finalTotal = grandTotal + tipAmount;
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -157,6 +161,9 @@ export function TableOrderSummary({
     failed: "bg-rose-100 text-rose-900",
   };
 
+  const paymentRequiredBeforeOrder =
+    requirePaymentBeforeOrder && paymentEnabled && paymentStatus !== "paid";
+
   const disableLahzaButton =
     !canEdit ||
     !isLahzaConfigured ||
@@ -165,6 +172,20 @@ export function TableOrderSummary({
     order.items.length === 0 ||
     paymentStatus === "paid" ||
     paymentStatus === "pending";
+
+  const submitDisabled =
+    !canEdit ||
+    !orderingEnabled ||
+    order.items.length === 0 ||
+    (paymentRequiredBeforeOrder && disableLahzaButton);
+
+  const handleSubmitClick = () => {
+    if (paymentRequiredBeforeOrder) {
+      onPayWithLahza(tipAmount);
+      return;
+    }
+    onSubmitOrder();
+  };
 
   return (
     <div className={`${isVisible ? "block" : "hidden"} lg:block lg:w-[380px]`}>
@@ -176,11 +197,10 @@ export function TableOrderSummary({
                 Current order
               </p>
               <p className="text-2xl font-semibold text-foreground">
-                {order.items.length === 0
+                {displayItems.length === 0
                   ? "No items yet"
-                  : `${order.items.length} ${
-                      order.items.length === 1 ? "item" : "items"
-                    }`}
+                  : `${displayItems.length} ${displayItems.length === 1 ? "item" : "items"
+                  }`}
               </p>
             </div>
             <div className="rounded-2xl bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
@@ -189,7 +209,7 @@ export function TableOrderSummary({
             </div>
           </div>
 
-          {!canEdit && order.items.length > 0 ? (
+          {!canEdit && displayItems.length > 0 ? (
             <div className="mt-4 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-sm">
               <p className="font-semibold text-foreground">
                 ✓ Order sent to kitchen
@@ -201,7 +221,7 @@ export function TableOrderSummary({
             </div>
           ) : null}
 
-          {order.items.length === 0 ? (
+          {displayItems.length === 0 ? (
             <div className="mt-8 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center">
               <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="font-semibold text-foreground">
@@ -219,7 +239,7 @@ export function TableOrderSummary({
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              {order.items.map((item) => {
+              {displayItems.map((item) => {
                 const menuItem = menuItemsById.get(item.menuItemId);
                 return (
                   <div
@@ -309,12 +329,12 @@ export function TableOrderSummary({
             </div>
           )}
 
-          {submittedOrders.length > 0 && (
+          {displaySubmittedOrders.length > 0 && (
             <div className="mt-6 space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 MY CURRENT ORDERS
               </p>
-              {submittedOrders.map((submittedOrder, index) => {
+              {displaySubmittedOrders.map((submittedOrder, index) => {
                 const isExpanded = expandedOrders.has(submittedOrder.id);
                 return (
                   <div
@@ -330,7 +350,7 @@ export function TableOrderSummary({
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="text-xs font-bold uppercase tracking-wider text-primary">
-                              Order #{submittedOrders.length - index}
+                              Order #{displaySubmittedOrders.length - index}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               • {formatTime(submittedOrder.submittedAt)}
@@ -429,58 +449,85 @@ export function TableOrderSummary({
             </div>
           </div>
 
-          <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Payment status
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {paymentStatusMessages[paymentStatus]}
-                </p>
+          {tipsConfig.enabled && !isPaid && (
+            <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm">
+              <p className="font-semibold text-foreground">Add a tip</p>
+              <Input
+                type="number"
+                min="0"
+                step="0.5"
+                value={tipInput}
+                onChange={(e) => setTipInput(e.target.value)}
+                placeholder="Enter a tip amount"
+                className="w-full text-sm font-semibold"
+              />
+              <div className="flex justify-between text-sm font-medium">
+                <span>Tip amount</span>
+                <span>${tipAmount.toFixed(2)}</span>
               </div>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentBadgeClasses[paymentStatus]}`}
-              >
-                {paymentStatusLabels[paymentStatus]}
-              </span>
             </div>
+          )}
 
-            {paymentReference && (
-              <p className="text-xs text-muted-foreground">
-                Reference:{" "}
-                <span className="font-semibold">{paymentReference}</span>
-              </p>
-            )}
+          {paymentEnabled && (
+            <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Payment status
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {paymentStatusMessages[paymentStatus]}
+                  </p>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentBadgeClasses[paymentStatus]}`}
+                >
+                  {paymentStatusLabels[paymentStatus]}
+                </span>
+              </div>
 
-            <Button
-              className="mt-2 w-full rounded-full text-sm font-semibold"
-              onClick={onPayWithLahza}
-              disabled={disableLahzaButton}
-            >
-              {isProcessingPayment ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing with Lahza...
-                </>
-              ) : (
-                "Pay with Lahza"
+              {paymentReference && (
+                <p className="text-xs text-muted-foreground">
+                  Reference:{" "}
+                  <span className="font-semibold">{paymentReference}</span>
+                </p>
               )}
-            </Button>
 
-            {!isLahzaConfigured && (
-              <p className="text-xs text-amber-600">
-                Lahza public key is not configured. Please contact the
-                restaurant admin.
-              </p>
-            )}
-            {!isLahzaReady && isLahzaConfigured && (
-              <p className="text-xs text-muted-foreground">
-                Loading Lahza payment widget...
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">Powered by Lahza.</p>
-          </div>
+              <Button
+                className="mt-2 w-full rounded-full text-sm font-semibold"
+                onClick={() => onPayWithLahza(tipAmount)}
+                disabled={disableLahzaButton}
+              >
+                {isProcessingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing with Lahza...
+                  </>
+                ) : (
+                  `Pay $${finalTotal.toFixed(2)} with Lahza`
+                )}
+              </Button>
+
+              {paymentRequiredBeforeOrder && (
+                <p className="text-xs text-amber-600">
+                  Payment is required before sending this order.
+                </p>
+              )}
+
+              {!isLahzaConfigured && (
+                <p className="text-xs text-amber-600">
+                  Lahza public key is not configured. Please contact the
+                  restaurant admin.
+                </p>
+              )}
+              {!isLahzaReady && isLahzaConfigured && (
+                <p className="text-xs text-muted-foreground">
+                  Loading Lahza payment widget...
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">Powered by Lahza.</p>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -489,10 +536,16 @@ export function TableOrderSummary({
         <div className="mx-auto max-w-md">
           <Button
             className="w-full rounded-full text-base font-semibold shadow-xl"
-            onClick={onSubmitOrder}
-            disabled={!canEdit || order.items.length === 0}
+            onClick={handleSubmitClick}
+            disabled={submitDisabled}
           >
-            {canEdit ? "Send order to kitchen" : "Order sent"}
+            {paymentRequiredBeforeOrder
+              ? isProcessingPayment
+                ? "Processing payment..."
+                : "Pay & send to kitchen"
+              : canEdit
+                ? "Send order to kitchen"
+                : "Order sent"}
           </Button>
         </div>
       </div>
@@ -502,10 +555,16 @@ export function TableOrderSummary({
         <Card className="mt-4 rounded-3xl border-0 bg-card p-4 shadow-xl ring-1 ring-border/10">
           <Button
             className="w-full rounded-full text-base font-semibold"
-            onClick={onSubmitOrder}
-            disabled={!canEdit || order.items.length === 0}
+            onClick={handleSubmitClick}
+            disabled={submitDisabled}
           >
-            {canEdit ? "Send order to kitchen" : "Order sent"}
+            {paymentRequiredBeforeOrder
+              ? isProcessingPayment
+                ? "Processing payment..."
+                : "Pay & send to kitchen"
+              : canEdit
+                ? "Send order to kitchen"
+                : "Order sent"}
           </Button>
         </Card>
 

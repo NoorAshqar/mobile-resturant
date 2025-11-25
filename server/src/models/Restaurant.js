@@ -114,6 +114,28 @@ const RestaurantSchema = new Schema(
         },
       },
     },
+    flowConfig: {
+      orderingEnabled: {
+        type: Boolean,
+        default: true,
+      },
+      paymentEnabled: {
+        type: Boolean,
+        default: true,
+      },
+      requirePaymentBeforeOrder: {
+        type: Boolean,
+        default: false,
+      },
+      tipsEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      tipsPercentage: {
+        type: [Number],
+        default: [10, 15, 20],
+      },
+    },
   },
   {
     timestamps: true,

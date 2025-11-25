@@ -50,6 +50,14 @@ function formatOrderResponse(order, restaurant, table) {
       themePalette: restaurant.themePalette,
       themeMode: restaurant.themeMode,
       paymentConfig: buildPaymentConfig(restaurant),
+      flowConfig: {
+        orderingEnabled: restaurant.flowConfig?.orderingEnabled ?? true,
+        paymentEnabled: restaurant.flowConfig?.paymentEnabled ?? true,
+        requirePaymentBeforeOrder:
+          restaurant.flowConfig?.requirePaymentBeforeOrder ?? false,
+        tipsEnabled: restaurant.flowConfig?.tipsEnabled ?? false,
+        tipsPercentage: restaurant.flowConfig?.tipsPercentage ?? [10, 15, 20],
+      },
     },
     table: {
       id: table._id.toString(),
@@ -843,46 +851,75 @@ router.patch("/:restaurantName/:tableNumber/payment", async (req, res) => {
       return res.status(404).json({ message: "Table not found." });
     }
 
-    const order = await Order.findOne({
+    const recentOrder = await Order.findOne({
       restaurant: restaurant._id,
       table: table._id,
       status: { $in: VIEWABLE_STATUSES },
     }).sort({ updatedAt: -1 });
 
-    if (!order) {
+    if (!recentOrder) {
       return res.status(404).json({ message: "Order not found." });
     }
 
-    if (method) {
-      order.paymentMethod = method;
+    const sessionKey = recentOrder.sessionKey;
+
+    // Find all unpaid orders in this session
+    const ordersToUpdate = await Order.find({
+      restaurant: restaurant._id,
+      table: table._id,
+      sessionKey: sessionKey,
+      paid: false,
+    });
+
+    if (ordersToUpdate.length === 0) {
+      // Should not happen if recentOrder is found and unpaid, but handle gracefully
+      // If recentOrder is already paid, we might just be updating metadata
+      if (!recentOrder.paid) {
+        ordersToUpdate.push(recentOrder);
+      }
     }
 
-    if (status) {
-      order.paymentStatus = status;
-      if (status === "paid") {
-        order.paid = true;
-        order.paidAt = new Date();
-        if (order.status === EDITABLE_STATUS) {
-          order.status = SUBMITTED_STATUS;
+    const updatePromises = ordersToUpdate.map(async (order) => {
+      if (method) {
+        order.paymentMethod = method;
+      }
+
+      if (status) {
+        order.paymentStatus = status;
+        if (status === "paid") {
+          order.paid = true;
+          order.paidAt = new Date();
+          if (order.status === EDITABLE_STATUS) {
+            ensureSessionKey(order);
+            calculateTotals(order);
+            order.status = SUBMITTED_STATUS;
+            order.submittedAt = new Date();
+          }
+        }
+        if (status === "failed") {
+          order.paid = false;
         }
       }
-      if (status === "failed") {
-        order.paid = false;
+
+      if (reference) {
+        order.paymentReference = reference;
       }
-    }
 
-    if (reference) {
-      order.paymentReference = reference;
-    }
+      if (metadata && typeof metadata === "object") {
+        order.paymentMetadata = metadata;
+      }
 
-    if (metadata && typeof metadata === "object") {
-      order.paymentMetadata = metadata;
-    }
+      return order.save();
+    });
 
-    await order.save();
+    await Promise.all(updatePromises);
+
+    // Return the most recent order (updated)
+    // We need to reload it to get the latest state if it was in the array
+    await recentOrder.reload(); // or findOne again if reload not available in this mongoose version
 
     return res.json({
-      order: formatOrderResponse(order, restaurant, table),
+      order: formatOrderResponse(recentOrder, restaurant, table),
     });
   } catch (error) {
     console.error("[ORDER_PAYMENT_UPDATE_ERROR]", error);

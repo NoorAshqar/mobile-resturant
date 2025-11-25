@@ -26,6 +26,13 @@ export interface TableOrderDetails {
     cuisine: string;
     themePalette?: string;
     themeMode?: ThemeMode;
+    flowConfig?: {
+      orderingEnabled: boolean;
+      paymentEnabled: boolean;
+      requirePaymentBeforeOrder: boolean;
+      tipsEnabled: boolean;
+      tipsPercentage: number[];
+    };
     paymentConfig?: {
       lahza?: {
         publicKey: string | null;

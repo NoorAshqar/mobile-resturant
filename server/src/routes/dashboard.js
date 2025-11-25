@@ -41,6 +41,14 @@ router.get("/", authMiddleware, async (req, res) => {
           merchantId: restaurant.paymentConfig?.lahza?.merchantId ?? null,
         },
       },
+      flowConfig: {
+        orderingEnabled: restaurant.flowConfig?.orderingEnabled ?? true,
+        paymentEnabled: restaurant.flowConfig?.paymentEnabled ?? true,
+        requirePaymentBeforeOrder:
+          restaurant.flowConfig?.requirePaymentBeforeOrder ?? false,
+        tipsEnabled: restaurant.flowConfig?.tipsEnabled ?? false,
+        tipsPercentage: restaurant.flowConfig?.tipsPercentage ?? [10, 15, 20],
+      },
     };
 
     return res.json({ restaurant: data });
@@ -118,6 +126,14 @@ router.post("/restaurant", authMiddleware, async (req, res) => {
           currency: restaurant.paymentConfig?.lahza?.currency ?? "ILS",
           merchantId: restaurant.paymentConfig?.lahza?.merchantId ?? null,
         },
+      },
+      flowConfig: {
+        orderingEnabled: restaurant.flowConfig?.orderingEnabled ?? true,
+        paymentEnabled: restaurant.flowConfig?.paymentEnabled ?? true,
+        requirePaymentBeforeOrder:
+          restaurant.flowConfig?.requirePaymentBeforeOrder ?? false,
+        tipsEnabled: restaurant.flowConfig?.tipsEnabled ?? false,
+        tipsPercentage: restaurant.flowConfig?.tipsPercentage ?? [10, 15, 20],
       },
     };
 
