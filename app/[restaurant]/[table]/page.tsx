@@ -2,7 +2,7 @@
 
 import { Loader2, ShoppingCart } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AddonSelector } from "@/components/addon-selector";
@@ -14,6 +14,7 @@ import { TableHero } from "@/components/table-order/table-hero";
 import {
   type TableOrderDetails,
   type TableOrderItem,
+  type SubmittedOrder,
 } from "@/components/table-order/types";
 
 const API_BASE_URL =
@@ -28,7 +29,7 @@ export default function TableOrderPage() {
   const tableNumber = params.table as string;
 
   const [order, setOrder] = useState<TableOrderDetails | null>(null);
-  const [submittedOrders, setSubmittedOrders] = useState<any[]>([]);
+  const [submittedOrders, setSubmittedOrders] = useState<SubmittedOrder[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItemType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,7 +47,7 @@ export default function TableOrderPage() {
   });
   const [tipsConfig, setTipsConfig] = useState<{ enabled: boolean; percentages: number[] }>({ enabled: false, percentages: [] });
 
-  const syncFlowFromOrder = (orderData: TableOrderDetails | null) => {
+  const syncFlowFromOrder = useCallback((orderData: TableOrderDetails | null) => {
     const flow = orderData?.restaurant.flowConfig;
     setFlowConfig({
       orderingEnabled: flow?.orderingEnabled ?? true,
@@ -57,90 +58,116 @@ export default function TableOrderPage() {
       enabled: flow?.tipsEnabled ?? false,
       percentages: flow?.tipsPercentage ?? [],
     });
-  };
+  }, []);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
+  const fetchSubmittedOrdersForSession = useCallback(
+    async (sessionKey: string) => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
+          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${sessionKey}`,
           { credentials: "include" },
         );
 
         if (response.ok) {
           const data = await response.json();
-          setOrder(data.order);
-          syncFlowFromOrder(data.order);
-        } else {
-          setOrder(null);
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to load order");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+          const sessionOrders: SubmittedOrder[] = (data.orders || []).filter(
+            (order, index, self) =>
+              order &&
+              order.id &&
+              self.findIndex((o: SubmittedOrder) => o.id === order.id) === index,
+          );
 
-    const fetchSubmittedOrders = async () => {
-      if (!order?.sessionKey) return;
+          sessionOrders.sort((a, b) => {
+            const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+            const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+            return bTime - aTime;
+          });
 
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${order.sessionKey}`,
-          { credentials: "include" },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setSubmittedOrders(data.orders || []);
+          setSubmittedOrders(sessionOrders);
+          return sessionOrders;
         }
       } catch (error) {
         console.error("Failed to fetch submitted orders:", error);
       }
-    };
+      setSubmittedOrders([]);
+      return [];
+    },
+    [restaurantName, tableNumber],
+  );
 
-    const fetchMenuItems = async () => {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/public/restaurant/${restaurantName}`,
-          { credentials: "include" },
-        );
+  const hydrateOrderAndSession = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
+        { credentials: "include" },
+      );
 
-        if (response.ok) {
-          const data = await response.json();
-          setMenuItems(data.restaurant.menuItems || []);
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to load menu");
+      if (!response.ok) {
+        setOrder(null);
+        setSubmittedOrders([]);
+        return null;
+      }
+
+      const data = await response.json();
+      const nextOrder: TableOrderDetails = data.order;
+      setOrder(nextOrder);
+      syncFlowFromOrder(nextOrder);
+
+      if (nextOrder?.sessionKey) {
+        await fetchSubmittedOrdersForSession(nextOrder.sessionKey);
+      } else {
+        setSubmittedOrders([]);
+      }
+
+      return nextOrder;
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load order");
+      setOrder(null);
+      setSubmittedOrders([]);
+      return null;
+    }
+  }, [fetchSubmittedOrdersForSession, restaurantName, syncFlowFromOrder, tableNumber]);
+
+  const fetchMenuItems = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/public/restaurant/${restaurantName}`,
+        { credentials: "include" },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data.restaurant.menuItems || []);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load menu");
+    }
+  }, [restaurantName]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const bootstrap = async () => {
+      setIsLoading(true);
+      await Promise.all([hydrateOrderAndSession(), fetchMenuItems()]);
+      if (!isCancelled) {
+        setIsLoading(false);
       }
     };
 
-    fetchOrder();
-    fetchMenuItems();
-  }, [restaurantName, tableNumber]);
+    bootstrap();
+    return () => {
+      isCancelled = true;
+    };
+  }, [fetchMenuItems, hydrateOrderAndSession]);
 
   useEffect(() => {
     if (order?.sessionKey) {
-      const fetchSubmittedOrders = async () => {
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${order.sessionKey}`,
-            { credentials: "include" },
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            setSubmittedOrders(data.orders || []);
-          }
-        } catch (error) {
-          console.error("Failed to fetch submitted orders:", error);
-        }
-      };
-      fetchSubmittedOrders();
+      fetchSubmittedOrdersForSession(order.sessionKey);
     }
-  }, [order?.sessionKey, restaurantName, tableNumber]);
+  }, [fetchSubmittedOrdersForSession, order?.sessionKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -181,9 +208,19 @@ export default function TableOrderPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (order?.payment?.status === "paid") {
+      setSubmittedOrders([]);
+      setActiveView("menu");
+    }
+  }, [order?.payment?.status]);
+
   const isEditableOrder = order?.status === "building";
   const isOrderingEnabled = flowConfig.orderingEnabled;
-  const canEdit = isEditableOrder && isOrderingEnabled;
+  const canEdit =
+    isEditableOrder &&
+    isOrderingEnabled &&
+    (order?.payment?.status ?? "unpaid") !== "paid";
   const lockMessage = !isOrderingEnabled
     ? "Ordering is currently disabled for this restaurant."
     : !isEditableOrder
@@ -193,6 +230,10 @@ export default function TableOrderPage() {
   const handleAddItem = async (menuItemId: string, addonIds: string[] = []) => {
     if (!flowConfig.orderingEnabled) {
       toast.error("Ordering is currently disabled.");
+      return;
+    }
+    if (!canEdit) {
+      toast.error(lockMessage ?? "Order is locked.");
       return;
     }
     try {
@@ -247,8 +288,8 @@ export default function TableOrderPage() {
       toast.error("Ordering is currently disabled.");
       return;
     }
-    if (!order || !isEditableOrder) {
-      toast.error("Order already submitted to kitchen.");
+    if (!order || !canEdit) {
+      toast.error(lockMessage ?? "Order already submitted to kitchen.");
       return;
     }
     if (newQuantity <= 0) {
@@ -287,8 +328,8 @@ export default function TableOrderPage() {
       toast.error("Ordering is currently disabled.");
       return;
     }
-    if (!order || !isEditableOrder) {
-      toast.error("Order already submitted to kitchen.");
+    if (!order || !canEdit) {
+      toast.error(lockMessage ?? "Order already submitted to kitchen.");
       return;
     }
     try {
@@ -418,27 +459,8 @@ export default function TableOrderPage() {
 
       toast.success("Order sent to the kitchen! Add more items anytime.");
 
-      // Fetch the new empty order for the next round
-      const newOrderResponse = await fetch(
-        `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}`,
-        { credentials: "include" },
-      );
-
-      if (newOrderResponse.ok) {
-        const newOrderData = await newOrderResponse.json();
-        setOrder(newOrderData.order);
-        syncFlowFromOrder(newOrderData.order);
-
-        // Refresh submitted orders
-        const submittedResponse = await fetch(
-          `${API_BASE_URL}/api/order/${restaurantName}/${tableNumber}/session/${newOrderData.order.sessionKey}`,
-          { credentials: "include" },
-        );
-        if (submittedResponse.ok) {
-          const submittedData = await submittedResponse.json();
-          setSubmittedOrders(submittedData.orders || []);
-        }
-      }
+      await hydrateOrderAndSession();
+      setActiveView("menu");
     } catch (error) {
       console.error(error);
       toast.error("Failed to send order. Please try again.");
@@ -472,7 +494,10 @@ export default function TableOrderPage() {
       return;
     }
 
-    if (order.items.length === 0) {
+    const submittedTotal = submittedOrders.reduce((sum, o) => sum + o.total, 0);
+    const grandTotal = order.total + submittedTotal + tipAmount;
+
+    if (grandTotal <= 0) {
       toast.info("Add at least one item before paying.");
       return;
     }
@@ -486,9 +511,6 @@ export default function TableOrderPage() {
       toast.error("Lahza payment widget is not ready yet.");
       return;
     }
-
-    const submittedTotal = submittedOrders.reduce((sum, o) => sum + o.total, 0);
-    const grandTotal = order.total + submittedTotal + tipAmount;
 
     const amountInMinorUnits = Math.round(grandTotal * 100);
     if (!Number.isFinite(amountInMinorUnits) || amountInMinorUnits <= 0) {
@@ -533,9 +555,7 @@ export default function TableOrderPage() {
             );
 
             if (response.ok) {
-              const data = await response.json();
-              setOrder(data.order);
-              syncFlowFromOrder(data.order);
+              await hydrateOrderAndSession();
               toast.success("Payment completed successfully.");
             } else {
               toast.error("Payment completed but failed to sync order.");

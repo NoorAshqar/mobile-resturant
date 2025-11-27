@@ -150,6 +150,7 @@ export function TableMenuView({
                   quantity={existing?.quantity ?? 0}
                   onAdd={() => handleIncrement(item.id, existing?.id, existing?.quantity)}
                   onRemove={() => handleDecrement(existing?.id, existing?.quantity)}
+                  disabled={!canEdit}
                 />
               );
             })}

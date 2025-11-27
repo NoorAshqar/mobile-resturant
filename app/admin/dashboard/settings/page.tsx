@@ -102,11 +102,33 @@ export default function RestaurantSettingsPage() {
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
+    
+    // If Lahza Public Key is being cleared, disable payments and requirePaymentBeforeOrder
+    if (name === "lahzaPublicKey" && !value.trim()) {
+      setFormState((prev) => ({
+        ...prev,
+        [name]: value,
+        paymentEnabled: false,
+        requirePaymentBeforeOrder: false,
+      }));
+    } else {
+      setFormState((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSwitchChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormState((prev) => ({ ...prev, [name]: e.target.checked }));
+    const checked = e.target.checked;
+    
+    if (name === "paymentEnabled") {
+      // If disabling payments, also disable requirePaymentBeforeOrder
+      setFormState((prev) => ({
+        ...prev,
+        paymentEnabled: checked,
+        requirePaymentBeforeOrder: checked ? prev.requirePaymentBeforeOrder : false,
+      }));
+    } else {
+      setFormState((prev) => ({ ...prev, [name]: checked }));
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -114,6 +136,17 @@ export default function RestaurantSettingsPage() {
 
     if (!formState.name || !formState.cuisine) {
       toast.error("All fields are required.");
+      return;
+    }
+
+    // Validate payment configuration
+    if (formState.paymentEnabled && !formState.lahzaPublicKey.trim()) {
+      toast.error("Lahza Public Key is required to enable payments.");
+      return;
+    }
+
+    if (formState.requirePaymentBeforeOrder && !formState.paymentEnabled) {
+      toast.error("Payments must be enabled to require payment before order.");
       return;
     }
 
@@ -365,13 +398,18 @@ export default function RestaurantSettingsPage() {
                     </label>
                     <p className="text-xs text-muted-foreground">
                       Allow customers to make payments.
+                      {!formState.lahzaPublicKey.trim() && (
+                        <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                          Lahza Public Key is required to enable payments.
+                        </span>
+                      )}
                     </p>
                   </div>
                   <Switch
                     id="paymentEnabled"
                     checked={formState.paymentEnabled}
                     onChange={handleSwitchChange("paymentEnabled")}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !formState.lahzaPublicKey.trim()}
                   />
                 </div>
                 <div className="flex items-center justify-between space-x-2">
@@ -384,13 +422,18 @@ export default function RestaurantSettingsPage() {
                     </label>
                     <p className="text-xs text-muted-foreground">
                       Customers must pay before their order is sent to the kitchen.
+                      {(!formState.paymentEnabled || !formState.lahzaPublicKey.trim()) && (
+                        <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                          Payments must be enabled to use this feature.
+                        </span>
+                      )}
                     </p>
                   </div>
                   <Switch
                     id="requirePaymentBeforeOrder"
                     checked={formState.requirePaymentBeforeOrder}
                     onChange={handleSwitchChange("requirePaymentBeforeOrder")}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !formState.paymentEnabled || !formState.lahzaPublicKey.trim()}
                   />
                 </div>
 

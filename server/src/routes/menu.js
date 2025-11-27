@@ -27,7 +27,8 @@ router.get("/", authMiddleware, async (req, res) => {
       name: item.name,
       description: item.description,
       price: item.price,
-      image: item.image,
+      image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ""),
+      images: item.images || (item.image ? [item.image] : []),
       category: item.category,
       popular: item.popular,
       vegetarian: item.vegetarian,
@@ -53,11 +54,11 @@ router.get("/", authMiddleware, async (req, res) => {
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const adminId = req.admin.sub;
-    const { name, description, price, image, category, popular, vegetarian, available, addons } = req.body ?? {};
+    const { name, description, price, image, images, category, popular, vegetarian, available, addons } = req.body ?? {};
 
-    if (!name || !description || price === undefined || !image || !category) {
+    if (!name || !description || price === undefined || !category) {
       return res.status(400).json({
-        message: "Name, description, price, image, and category are required.",
+        message: "Name, description, price, and category are required.",
       });
     }
 
@@ -68,13 +69,23 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 
     const addonIds = Array.isArray(addons) ? addons.filter(Boolean) : [];
+    const imageArray = Array.isArray(images) && images.length > 0 
+      ? images.filter(Boolean)
+      : (image ? [image.trim()] : []);
+
+    if (imageArray.length === 0) {
+      return res.status(400).json({
+        message: "At least one image is required.",
+      });
+    }
 
     const menuItem = await MenuItem.create({
       restaurant: restaurant._id,
       name: name.trim(),
       description: description.trim(),
       price: parseFloat(price),
-      image: image.trim(),
+      image: imageArray[0],
+      images: imageArray,
       category: category.trim(),
       popular: Boolean(popular),
       vegetarian: Boolean(vegetarian),
@@ -94,7 +105,8 @@ router.post("/", authMiddleware, async (req, res) => {
       name: menuItem.name,
       description: menuItem.description,
       price: menuItem.price,
-      image: menuItem.image,
+      image: menuItem.image || (menuItem.images && menuItem.images.length > 0 ? menuItem.images[0] : ""),
+      images: menuItem.images || (menuItem.image ? [menuItem.image] : []),
       category: menuItem.category,
       popular: menuItem.popular,
       vegetarian: menuItem.vegetarian,
@@ -121,7 +133,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const adminId = req.admin.sub;
     const { id } = req.params;
-    const { name, description, price, image, category, popular, vegetarian, available, addons } = req.body ?? {};
+    const { name, description, price, image, images, category, popular, vegetarian, available, addons } = req.body ?? {};
 
     const restaurant = await Restaurant.findOne({ admin: adminId });
 
@@ -141,7 +153,22 @@ router.put("/:id", authMiddleware, async (req, res) => {
     if (name) menuItem.name = name.trim();
     if (description) menuItem.description = description.trim();
     if (price !== undefined) menuItem.price = parseFloat(price);
-    if (image) menuItem.image = image.trim();
+    if (images !== undefined) {
+      const imageArray = Array.isArray(images) && images.length > 0 
+        ? images.filter(Boolean)
+        : (image ? [image.trim()] : []);
+      if (imageArray.length > 0) {
+        menuItem.images = imageArray;
+        menuItem.image = imageArray[0];
+      }
+    } else if (image) {
+      menuItem.image = image.trim();
+      if (!menuItem.images || menuItem.images.length === 0) {
+        menuItem.images = [image.trim()];
+      } else {
+        menuItem.images[0] = image.trim();
+      }
+    }
     if (category) menuItem.category = category.trim();
     if (popular !== undefined) menuItem.popular = Boolean(popular);
     if (vegetarian !== undefined) menuItem.vegetarian = Boolean(vegetarian);
@@ -158,7 +185,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
       name: menuItem.name,
       description: menuItem.description,
       price: menuItem.price,
-      image: menuItem.image,
+      image: menuItem.image || (menuItem.images && menuItem.images.length > 0 ? menuItem.images[0] : ""),
+      images: menuItem.images || (menuItem.image ? [menuItem.image] : []),
       category: menuItem.category,
       popular: menuItem.popular,
       vegetarian: menuItem.vegetarian,

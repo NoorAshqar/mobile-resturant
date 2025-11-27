@@ -18,34 +18,11 @@ import { MenuItemType } from "@/components/menu-item";
 import {
   TableOrderDetails,
   TableOrderPaymentStatus,
+  SubmittedOrder,
 } from "@/components/table-order/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
-
-interface SubmittedOrder {
-  id: string;
-  items: Array<{
-    id: string;
-    menuItemId: string;
-    name: string;
-    price: number;
-    quantity: number;
-    addons?: Array<{
-      id: string;
-      name: string;
-      price: number;
-    }>;
-    subtotal: number;
-  }>;
-  subtotal: number;
-  tax: number;
-  total: number;
-  submittedAt: string;
-}
 
 interface TableOrderSummaryProps {
   order: TableOrderDetails;
@@ -113,23 +90,23 @@ export function TableOrderSummary({
   const isPaid = paymentStatus === "paid";
   const displayItems = isPaid ? [] : order.items;
   const displaySubmittedOrders = isPaid ? [] : submittedOrders;
-  const currentOrderTotal = isPaid ? 0 : order.total;
   const currentOrderSubtotal = isPaid ? 0 : order.subtotal;
-  const currentOrderTax = isPaid ? 0 : order.tax;
+  const currentOrderTax = 0;
+  const currentOrderTotal = currentOrderSubtotal;
+  const sessionOrderCount =
+    displaySubmittedOrders.length + (displayItems.length > 0 ? 1 : 0);
 
-  const grandTotal =
-    displaySubmittedOrders.reduce((sum, o) => sum + o.total, 0) +
-    currentOrderTotal;
   const grandSubtotal =
     displaySubmittedOrders.reduce((sum, o) => sum + o.subtotal, 0) +
     currentOrderSubtotal;
-  const grandTax =
-    displaySubmittedOrders.reduce((sum, o) => sum + o.tax, 0) + currentOrderTax;
+  const grandTax = 0;
+  const grandTotal = grandSubtotal;
 
   const numericTip = Number.parseFloat(tipInput);
   const tipAmount = Number.isFinite(numericTip) && numericTip > 0 ? numericTip : 0;
 
   const finalTotal = grandTotal + tipAmount;
+  const hasBalance = grandTotal > 0;
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -166,10 +143,11 @@ export function TableOrderSummary({
 
   const disableLahzaButton =
     !canEdit ||
+    !paymentEnabled ||
     !isLahzaConfigured ||
     !isLahzaReady ||
     isProcessingPayment ||
-    order.items.length === 0 ||
+    !hasBalance ||
     paymentStatus === "paid" ||
     paymentStatus === "pending";
 
@@ -336,6 +314,9 @@ export function TableOrderSummary({
               </p>
               {displaySubmittedOrders.map((submittedOrder, index) => {
                 const isExpanded = expandedOrders.has(submittedOrder.id);
+                const displaySubtotal = submittedOrder.subtotal;
+                const displayTax = 0;
+                const displayTotal = displaySubtotal + displayTax;
                 return (
                   <div
                     key={submittedOrder.id}
@@ -365,7 +346,7 @@ export function TableOrderSummary({
                         </div>
                         <div className="flex items-center gap-3">
                           <p className="text-lg font-bold text-foreground">
-                            ${submittedOrder.total.toFixed(2)}
+                            ${displayTotal.toFixed(2)}
                           </p>
                           {isExpanded ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -410,15 +391,11 @@ export function TableOrderSummary({
                           <div className="mt-4 space-y-2 border-t border-border pt-3 text-sm">
                             <div className="flex justify-between text-muted-foreground">
                               <span>Subtotal</span>
-                              <span>${submittedOrder.subtotal.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-muted-foreground">
-                              <span>Tax</span>
-                              <span>${submittedOrder.tax.toFixed(2)}</span>
+                              <span>${displaySubtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between font-bold text-foreground">
                               <span>Total</span>
-                              <span>${submittedOrder.total.toFixed(2)}</span>
+                              <span>${displayTotal.toFixed(2)}</span>
                             </div>
                           </div>
                         </div>
@@ -437,17 +414,17 @@ export function TableOrderSummary({
                 ${grandSubtotal.toFixed(2)}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span>Tax</span>
-              <span className="font-semibold text-foreground">
-                ${grandTax.toFixed(2)}
-              </span>
-            </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-base font-bold text-foreground">
               <span>Total</span>
               <span>${grandTotal.toFixed(2)}</span>
             </div>
           </div>
+
+          {sessionOrderCount > 1 && !isPaid && (
+            <p className="mt-2 text-xs font-semibold uppercase tracking-tight text-muted-foreground">
+              Paying for {sessionOrderCount} orders together
+            </p>
+          )}
 
           {tipsConfig.enabled && !isPaid && (
             <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm">
@@ -526,6 +503,15 @@ export function TableOrderSummary({
                 </p>
               )}
               <p className="text-xs text-muted-foreground">Powered by Lahza.</p>
+            </div>
+          )}
+          {!paymentEnabled && (
+            <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-4 text-sm text-muted-foreground">
+              <p className="text-sm font-semibold text-foreground">Payments disabled</p>
+              <p>
+                This restaurant is not accepting payments through the app right now.
+                Please settle your bill with the staff.
+              </p>
             </div>
           )}
         </Card>

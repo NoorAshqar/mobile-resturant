@@ -7,7 +7,7 @@ import {
   Search,
   Table as TableIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,10 @@ import { colors } from "@/config/colors";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const WS_BASE_URL = API_BASE_URL.replace(/^http/i, "ws");
+
+type OrderStatus = "building" | "submitted" | "completed" | "cancelled";
+type PaymentStatus = "unpaid" | "pending" | "paid" | "failed";
 
 interface OrderItem {
   id: string;
@@ -29,17 +33,18 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  restaurantId?: string;
   tableNumber: number;
   items: OrderItem[];
   subtotal: number;
   tax: number;
   total: number;
-  status: string;
+  status: OrderStatus;
   createdAt: string;
   updatedAt: string;
   payment?: {
     method: string | null;
-    status: "unpaid" | "pending" | "paid" | "failed";
+    status: PaymentStatus;
     reference: string | null;
   };
 }
@@ -48,11 +53,145 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(
+    new Set(),
+  );
+  const wsRef = useRef<WebSocket | null>(null);
+  const statusFilters = useMemo(
+    () => [
+      { id: "all" as const, label: "All" },
+      { id: "submitted" as const, label: "Submitted" },
+      { id: "building" as const, label: "Building" },
+      { id: "completed" as const, label: "Completed" },
+      { id: "cancelled" as const, label: "Cancelled" },
+    ],
+    [],
+  );
+  const statusOptions: OrderStatus[] = ["submitted", "completed", "cancelled", "building"];
+
+  const setOrderUpdating = (orderId: string, isUpdating: boolean) => {
+    setUpdatingOrders((prev) => {
+      const next = new Set(prev);
+      if (isUpdating) {
+        next.add(orderId);
+      } else {
+        next.delete(orderId);
+      }
+      return next;
+    });
+  };
+
+  const upsertOrder = (incoming: Order) => {
+    if (!incoming?.id) return;
+
+    setOrders((previous) => {
+      const existingIndex = previous.findIndex((order) => order.id === incoming.id);
+      const nextOrders = [...previous];
+      if (existingIndex >= 0) {
+        nextOrders[existingIndex] = { ...nextOrders[existingIndex], ...incoming };
+      } else {
+        nextOrders.unshift(incoming);
+      }
+      nextOrders.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      return nextOrders;
+    });
+  };
+
+  const startWebSocket = () => {
+    try {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      const socket = new WebSocket(`${WS_BASE_URL}/ws/orders`);
+      wsRef.current = socket;
+
+      socket.onopen = () => setLiveConnected(true);
+      socket.onclose = () => setLiveConnected(false);
+      socket.onerror = () => setLiveConnected(false);
+      socket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message?.type === "order:update" && message.payload) {
+            upsertOrder(message.payload as Order);
+          }
+        } catch (error) {
+          console.error("[WS_MESSAGE_ERROR]", error);
+        }
+      };
+    } catch (error) {
+      console.error("[WS_INIT_ERROR]", error);
+      setLiveConnected(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/order/admin/list`, {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.orders);
+        setFilteredOrders(data.orders);
+      } else {
+        toast.error("Failed to load orders");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load orders");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (
+    orderId: string,
+    nextStatus: OrderStatus,
+  ) => {
+    setOrderUpdating(orderId, true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/order/admin/${orderId}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status: nextStatus }),
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.order) {
+          upsertOrder(data.order);
+        }
+        toast.success("Order status updated");
+      } else {
+        toast.error("Failed to update order status");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update order status");
+    } finally {
+      setOrderUpdating(orderId, false);
+    }
+  };
 
   useEffect(() => {
     fetchOrders();
+    startWebSocket();
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -77,31 +216,12 @@ export default function OrdersPage() {
     setFilteredOrders(filtered);
   }, [searchQuery, statusFilter, orders]);
 
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/order/admin/list`, {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data.orders);
-        setFilteredOrders(data.orders);
-      } else {
-        toast.error("Failed to load orders");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load orders");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-      case "active":
+      case "submitted":
         return colors.primary[600];
+      case "building":
+        return colors.warning[600];
       case "completed":
         return colors.success[600];
       case "cancelled":
@@ -111,7 +231,9 @@ export default function OrdersPage() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: OrderStatus) => {
+    if (status === "building") return "Building (in progress)";
+    if (status === "submitted") return "Submitted";
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
@@ -149,7 +271,7 @@ export default function OrdersPage() {
     .reduce((sum, order) => sum + order.total, 0);
 
   const activeOrders = orders.filter(
-    (order) => order.status === "active",
+    (order) => order.status === "submitted" || order.status === "building",
   ).length;
 
   if (isLoading) {
@@ -168,6 +290,11 @@ export default function OrdersPage() {
           <h2 className="text-2xl font-bold">Orders</h2>
           <p className="text-sm mt-1">View and manage all restaurant orders</p>
         </div>
+        <Badge
+          className={`px-3 py-1 text-xs font-semibold ${liveConnected ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-800"}`}
+        >
+          {liveConnected ? "Live updates" : "Live feed offline"}
+        </Badge>
       </div>
 
       {/* Stats */}
@@ -224,45 +351,17 @@ export default function OrdersPage() {
               className="pl-12 h-12 text-base"
             />
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setStatusFilter("all")}
-              className={`border-2 ${
-                statusFilter === "all"
-                  ? "shadow-md background-sidebar-primary"
-                  : ""
-              }`}
-            >
-              All
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStatusFilter("active")}
-              className={`border-2 ${
-                statusFilter === "active" ? "shadow-md" : ""
-              }`}
-            >
-              Active
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStatusFilter("completed")}
-              className={`border-2 ${
-                statusFilter === "completed" ? "shadow-md" : ""
-              }`}
-            >
-              Completed
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStatusFilter("cancelled")}
-              className={`border-2 ${
-                statusFilter === "cancelled" ? "shadow-md" : ""
-              }`}
-            >
-              Cancelled
-            </Button>
+          <div className="flex flex-wrap gap-2">
+            {statusFilters.map((filter) => (
+              <Button
+                key={filter.id}
+                variant="outline"
+                onClick={() => setStatusFilter(filter.id)}
+                className={`border-2 ${statusFilter === filter.id ? "shadow-md" : ""}`}
+              >
+                {filter.label}
+              </Button>
+            ))}
           </div>
         </div>
       </Card>
@@ -276,6 +375,17 @@ export default function OrdersPage() {
               className="overflow-hidden border-2 transition-all hover:shadow-lg"
             >
               <div className="p-6">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                  <Badge
+                    style={{ backgroundColor: getStatusColor(order.status), color: "#fff" }}
+                    className="font-semibold"
+                  >
+                    {getStatusLabel(order.status)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    #{order.id.slice(-6)}
+                  </span>
+                </div>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl">
@@ -291,9 +401,6 @@ export default function OrdersPage() {
                       </div>
                     </div>
                   </div>
-                  <Badge className="font-semibold">
-                    {getStatusLabel(order.status)}
-                  </Badge>
                 </div>
 
                 <div className="mb-4 pt-4 border-t-2">
@@ -352,6 +459,34 @@ export default function OrdersPage() {
                   >
                     {getPaymentLabel(order.payment?.status)}
                   </Badge>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">Manage status</p>
+                      <p className="text-xs text-muted-foreground">
+                        Keep the kitchen and staff in sync in real-time.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {statusOptions.map((status) => {
+                      const isCurrent = order.status === status;
+                      const isUpdating = updatingOrders.has(order.id);
+                      return (
+                        <Button
+                          key={status}
+                          size="sm"
+                          variant={isCurrent ? "default" : "outline"}
+                          disabled={isCurrent || isUpdating}
+                          onClick={() => handleStatusChange(order.id, status)}
+                        >
+                          {isCurrent ? "Current" : getStatusLabel(status)}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </Card>

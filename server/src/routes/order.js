@@ -6,6 +6,7 @@ const Table = require("../models/Table");
 const MenuItem = require("../models/MenuItem");
 const Addon = require("../models/Addon");
 const Order = require("../models/Order");
+const { broadcastOrderUpdate } = require("../utils/websocket");
 
 const router = express.Router();
 
@@ -25,6 +26,12 @@ const TAX_RATE = 0.1;
 
 const allowedPaymentStatuses = ["unpaid", "pending", "paid", "failed"];
 const allowedPaymentMethods = ["cash", "card", "lahza"];
+const allowedOrderStatuses = [
+  EDITABLE_STATUS,
+  SUBMITTED_STATUS,
+  "completed",
+  "cancelled",
+];
 
 function calculateTotals(order) {
   const subtotal = order.items.reduce((sum, item) => {
@@ -117,6 +124,33 @@ function normalizeEditableStatus(order) {
   }
 }
 
+function formatAdminOrderSummary(order) {
+  const safeOrder = order.toObject ? order.toObject() : order;
+  return {
+    id: safeOrder._id?.toString?.() ?? safeOrder.id?.toString?.() ?? "",
+    restaurantId: safeOrder.restaurant?.toString?.() ?? safeOrder.restaurantId,
+    tableNumber: safeOrder.tableNumber,
+    items: (safeOrder.items || []).map((item) => ({
+      id: item._id?.toString?.() ?? item.id?.toString?.(),
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      subtotal: item.price * item.quantity,
+    })),
+    subtotal: safeOrder.subtotal,
+    tax: safeOrder.tax,
+    total: safeOrder.total,
+    status: safeOrder.status,
+    createdAt: safeOrder.createdAt,
+    updatedAt: safeOrder.updatedAt,
+    payment: {
+      method: safeOrder.paymentMethod ?? null,
+      status: safeOrder.paymentStatus ?? "unpaid",
+      reference: safeOrder.paymentReference ?? null,
+    },
+  };
+}
+
 function ensureSessionKey(order, defaultKey) {
   if (!order.sessionKey) {
     order.sessionKey = defaultKey ?? new Date().toISOString();
@@ -142,33 +176,56 @@ router.get("/admin/list", authMiddleware, async (req, res) => {
 
     const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
 
-    const data = orders.map((order) => ({
-      id: order._id.toString(),
-      tableNumber: order.tableNumber,
-      items: order.items.map((item) => ({
-        id: item._id.toString(),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.price * item.quantity,
-      })),
-      subtotal: order.subtotal,
-      tax: order.tax,
-      total: order.total,
-      status: order.status,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      payment: {
-        method: order.paymentMethod ?? null,
-        status: order.paymentStatus ?? "unpaid",
-        reference: order.paymentReference ?? null,
-      },
-    }));
+    const data = orders.map((order) =>
+      formatAdminOrderSummary({
+        ...order,
+        restaurantId: restaurant._id.toString(),
+      }),
+    );
 
     return res.json({ orders: data });
   } catch (error) {
     console.error("[ORDER_ADMIN_LIST_ERROR]", error);
     return res.status(500).json({ message: "Failed to load orders." });
+  }
+});
+
+router.patch("/admin/:orderId/status", authMiddleware, async (req, res) => {
+  try {
+    const adminId = req.admin.sub;
+    const { orderId } = req.params;
+    const { status } = req.body ?? {};
+
+    if (!status || !allowedOrderStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status." });
+    }
+
+    const restaurant = await Restaurant.findOne({ admin: adminId });
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found." });
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      restaurant: restaurant._id,
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    order.status = status;
+    await order.save();
+
+    const formatted = formatAdminOrderSummary(order);
+    broadcastOrderUpdate({ ...formatted, restaurantId: restaurant._id.toString() });
+
+    return res.json({ order: formatted });
+  } catch (error) {
+    console.error("[ORDER_ADMIN_STATUS_ERROR]", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to update order status." });
   }
 });
 
@@ -575,6 +632,11 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
     ensureSessionKey(order);
     await order.save();
 
+    broadcastOrderUpdate({
+      ...formatAdminOrderSummary(order),
+      restaurantId: restaurant._id.toString(),
+    });
+
     return res.json({
       order: formatOrderResponse(order, restaurant, table),
     });
@@ -662,6 +724,11 @@ router.put("/:restaurantName/:tableNumber/items/:itemId", async (req, res) => {
     calculateTotals(order);
     await order.save();
 
+    broadcastOrderUpdate({
+      ...formatAdminOrderSummary(order),
+      restaurantId: restaurant._id.toString(),
+    });
+
     return res.json({
       order: formatOrderResponse(order, restaurant, table),
     });
@@ -731,14 +798,19 @@ router.delete(
         (item) => item._id.toString() !== itemId,
       );
 
-      calculateTotals(order);
-      await order.save();
+    calculateTotals(order);
+    await order.save();
 
-      return res.json({
-        order: formatOrderResponse(order, restaurant, table),
-      });
-    } catch (error) {
-      console.error("[ORDER_REMOVE_ITEM_ERROR]", error);
+    broadcastOrderUpdate({
+      ...formatAdminOrderSummary(order),
+      restaurantId: restaurant._id.toString(),
+    });
+
+    return res.json({
+      order: formatOrderResponse(order, restaurant, table),
+    });
+  } catch (error) {
+    console.error("[ORDER_REMOVE_ITEM_ERROR]", error);
       return res
         .status(500)
         .json({ message: "Failed to remove item from order." });
@@ -798,6 +870,11 @@ router.post("/:restaurantName/:tableNumber/submit", async (req, res) => {
     order.status = SUBMITTED_STATUS;
     order.submittedAt = new Date();
     await order.save();
+
+    broadcastOrderUpdate({
+      ...formatAdminOrderSummary(order),
+      restaurantId: restaurant._id.toString(),
+    });
 
     return res.json({
       order: formatOrderResponse(order, restaurant, table),
@@ -915,11 +992,15 @@ router.patch("/:restaurantName/:tableNumber/payment", async (req, res) => {
     await Promise.all(updatePromises);
 
     // Return the most recent order (updated)
-    // We need to reload it to get the latest state if it was in the array
-    await recentOrder.reload(); // or findOne again if reload not available in this mongoose version
+    const finalOrder = await Order.findById(recentOrder._id);
+
+    broadcastOrderUpdate({
+      ...formatAdminOrderSummary(finalOrder),
+      restaurantId: restaurant._id.toString(),
+    });
 
     return res.json({
-      order: formatOrderResponse(recentOrder, restaurant, table),
+      order: formatOrderResponse(finalOrder, restaurant, table),
     });
   } catch (error) {
     console.error("[ORDER_PAYMENT_UPDATE_ERROR]", error);

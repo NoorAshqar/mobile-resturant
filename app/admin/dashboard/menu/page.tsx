@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,10 +21,80 @@ interface MenuItem {
   description: string;
   price: number;
   image: string;
+  images?: string[];
   category: string;
   popular: boolean;
   vegetarian: boolean;
   available: boolean;
+}
+
+function ImageGallery({ images, alt }: { images: string[]; alt: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const hasMultiple = images.length > 1;
+
+  if (images.length === 0) {
+    return (
+      <div className="h-full w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <span className="text-gray-400">No image</span>
+      </div>
+    );
+  }
+
+  const currentImage = images[currentIndex] || images[0];
+
+  return (
+    <div className="relative h-full w-full">
+      <Image
+        src={currentImage}
+        alt={alt}
+        className="h-full w-full object-cover"
+        fill
+        unoptimized={currentImage?.includes("localhost:4000") || currentImage?.startsWith("/uploads/")}
+      />
+      {hasMultiple && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentIndex(index);
+                }}
+                className={`h-1.5 rounded-full transition-all ${
+                  index === currentIndex ? "w-6 bg-white" : "w-1.5 bg-white/50"
+                }`}
+                aria-label={`Go to image ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function MenuManagementPage() {
@@ -161,14 +231,9 @@ export default function MenuManagementPage() {
                   key={item.id}
                   className="overflow-hidden border-2 transition-all hover:shadow-lg"
                 >
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      className="h-full w-full object-cover"
-                      fill
-                    />
-                    <div className="absolute top-3 right-3 flex gap-2">
+                  <div className="relative h-48 w-full group">
+                    <ImageGallery images={item.images || [item.image]} alt={item.name} />
+                    <div className="absolute top-3 right-3 flex gap-2 z-10">
                       {item.popular && (
                         <Badge className="font-semibold">Popular</Badge>
                       )}
@@ -176,6 +241,13 @@ export default function MenuManagementPage() {
                         <Badge className="font-semibold">Veg</Badge>
                       )}
                     </div>
+                    {(item.images && item.images.length > 1) && (
+                      <div className="absolute bottom-3 left-3 z-10">
+                        <Badge variant="secondary" className="font-semibold">
+                          {item.images.length} images
+                        </Badge>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-4 space-y-3">

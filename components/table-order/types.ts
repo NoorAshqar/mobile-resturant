@@ -66,3 +66,24 @@ export interface TableOrderPayment {
   status: TableOrderPaymentStatus;
   reference: string | null;
 }
+
+export interface SubmittedOrder {
+  id: string;
+  items: Array<{
+    id: string;
+    menuItemId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    addons?: Array<{
+      id: string;
+      name: string;
+      price: number;
+    }>;
+    subtotal: number;
+  }>;
+  subtotal: number;
+  tax: number;
+  total: number;
+  submittedAt: string;
+}

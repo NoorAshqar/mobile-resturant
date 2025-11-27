@@ -25,8 +25,11 @@ const MenuItemSchema = new Schema(
     },
     image: {
       type: String,
-      required: true,
       trim: true,
+    },
+    images: {
+      type: [String],
+      default: [],
     },
     category: {
       type: String,

@@ -36,12 +36,66 @@ export function CreateRestaurantForm() {
     description: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [useFileUpload, setUseFileUpload] = useState(false);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
+    if (name === "logoUrl") {
+      setFormState((prev) => ({ ...prev, [name]: value }));
+      setLogoPreview(value);
+      setUseFileUpload(false);
+    } else {
+      setFormState((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      setUseFileUpload(true);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadLogo = async (): Promise<string | null> => {
+    if (!logoFile) return null;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("logo", logoFile);
+
+      const response = await fetch(`${API_BASE_URL}/api/upload/restaurant/logo`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.message || "Failed to upload logo");
+      }
+
+      const data = await response.json();
+      return data.imageUrl;
+    } catch (error) {
+      console.error("Logo upload error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to upload logo");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -66,6 +120,21 @@ export function CreateRestaurantForm() {
     setIsSubmitting(true);
 
     try {
+      let logoUrl = formState.logoUrl.trim();
+
+      // Upload file if a file was selected
+      if (useFileUpload && logoFile) {
+        const uploadedUrl = await handleUploadLogo();
+        if (!uploadedUrl) {
+          setIsSubmitting(false);
+          return;
+        }
+        // Construct full URL if it's a relative path
+        logoUrl = uploadedUrl.startsWith("http") 
+          ? uploadedUrl 
+          : `${API_BASE_URL}${uploadedUrl}`;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/dashboard/restaurant`, {
         method: "POST",
         headers: {
@@ -75,7 +144,7 @@ export function CreateRestaurantForm() {
           name: formState.name.trim(),
           cuisine: formState.cuisine.trim(),
           slug: sanitizedSlug,
-          logoUrl: formState.logoUrl.trim(),
+          logoUrl: logoUrl,
           description: formState.description.trim(),
         }),
         credentials: "include",
@@ -170,20 +239,78 @@ export function CreateRestaurantForm() {
                   htmlFor="logoUrl"
                   className="block text-sm font-semibold"
                 >
-                  Logo URL
+                  Logo
                 </label>
-                <div className="relative">
-                  <Image className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                  <Input
-                    id="logoUrl"
-                    name="logoUrl"
-                    type="url"
-                    placeholder="https://your-cdn.com/logo.png"
-                    value={formState.logoUrl}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                    className="pl-9"
-                  />
+                <div className="space-y-3">
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input
+                        type="radio"
+                        name="logoSource"
+                        checked={!useFileUpload}
+                        onChange={() => {
+                          setUseFileUpload(false);
+                          setLogoFile(null);
+                        }}
+                        disabled={isSubmitting || isUploading}
+                        className="h-4 w-4"
+                      />
+                      <span>Use URL</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                      <input
+                        type="radio"
+                        name="logoSource"
+                        checked={useFileUpload}
+                        onChange={() => {
+                          setUseFileUpload(true);
+                          setFormState((prev) => ({ ...prev, logoUrl: "" }));
+                        }}
+                        disabled={isSubmitting || isUploading}
+                        className="h-4 w-4"
+                      />
+                      <span>Upload File</span>
+                    </label>
+                  </div>
+                  {!useFileUpload ? (
+                    <div className="relative">
+                      <Image className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                      <Input
+                        id="logoUrl"
+                        name="logoUrl"
+                        type="url"
+                        placeholder="https://your-cdn.com/logo.png"
+                        value={formState.logoUrl}
+                        onChange={handleChange}
+                        disabled={isSubmitting || isUploading}
+                        className="pl-9"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Input
+                        id="logoFile"
+                        name="logoFile"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        disabled={isSubmitting || isUploading}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Accepted: JPEG, PNG, GIF, WebP (max 5MB)
+                      </p>
+                    </div>
+                  )}
+                  {logoPreview && (
+                    <div className="mt-2">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="h-24 w-24 object-cover rounded-md border"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -229,12 +356,12 @@ export function CreateRestaurantForm() {
             <Button
               type="submit"
               className="w-full text-black dark:text-white font-semibold transition-all hover:shadow-xl"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
             >
-              {isSubmitting ? (
+              {(isSubmitting || isUploading) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Restaurant…
+                  {isUploading ? "Uploading..." : "Creating Restaurant…"}
                 </>
               ) : (
                 <>
