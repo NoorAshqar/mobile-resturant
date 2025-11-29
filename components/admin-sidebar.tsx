@@ -2,12 +2,12 @@
 
 import {
   LayoutDashboard,
+  PlusCircle,
   Receipt,
   Settings,
   Store,
   Table as TableIcon,
   UtensilsCrossed,
-  PlusCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -71,7 +71,7 @@ export function AdminSidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:shadow-md"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:shadow-md cursor-pointer"
             >
               <Icon className="h-5 w-5" />
               {item.name}

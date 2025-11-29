@@ -1,12 +1,12 @@
 "use client";
 
+import { Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home } from "lucide-react";
 
-import { ThemeToggleButton } from "./theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/utils";
+import { ThemeToggleButton } from "./theme-toggle-button";
 
 const navLinks = [
   { href: "/menu", label: "Menu" },
@@ -29,7 +29,7 @@ export function Header() {
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm font-semibold transition hover:border-primary/60 hover:text-primary"
+            className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm font-semibold transition hover:border-primary/60 hover:text-primary cursor-pointer"
           >
             <Home className="h-4 w-4" />
             Kareem Eats
@@ -45,7 +45,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "text-sm font-medium transition hover:text-primary",
+                    "text-sm font-medium transition hover:text-primary cursor-pointer",
                     isActive ? "text-primary" : "text-muted-foreground",
                   )}
                 >
@@ -78,7 +78,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition",
+                    "whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition cursor-pointer",
                     isActive
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-muted-foreground",

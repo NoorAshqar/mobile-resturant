@@ -12,9 +12,9 @@ import { TableOrderSummary } from "@/components/table-order/order-summary";
 import { RestaurantThemeWrapper } from "@/components/table-order/restaurant-theme-wrapper";
 import { TableHero } from "@/components/table-order/table-hero";
 import {
+  type SubmittedOrder,
   type TableOrderDetails,
   type TableOrderItem,
-  type SubmittedOrder,
 } from "@/components/table-order/types";
 
 const API_BASE_URL =
@@ -38,27 +38,34 @@ export default function TableOrderPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isLahzaReady, setIsLahzaReady] = useState(false);
   const [showAddonSelector, setShowAddonSelector] = useState(false);
-  const [selectedMenuItemForAddons, setSelectedMenuItemForAddons] = useState<MenuItemType | null>(null);
+  const [selectedMenuItemForAddons, setSelectedMenuItemForAddons] =
+    useState<MenuItemType | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [flowConfig, setFlowConfig] = useState({
     orderingEnabled: true,
     paymentEnabled: true,
     requirePaymentBeforeOrder: false,
   });
-  const [tipsConfig, setTipsConfig] = useState<{ enabled: boolean; percentages: number[] }>({ enabled: false, percentages: [] });
+  const [tipsConfig, setTipsConfig] = useState<{
+    enabled: boolean;
+    percentages: number[];
+  }>({ enabled: false, percentages: [] });
 
-  const syncFlowFromOrder = useCallback((orderData: TableOrderDetails | null) => {
-    const flow = orderData?.restaurant.flowConfig;
-    setFlowConfig({
-      orderingEnabled: flow?.orderingEnabled ?? true,
-      paymentEnabled: flow?.paymentEnabled ?? true,
-      requirePaymentBeforeOrder: flow?.requirePaymentBeforeOrder ?? false,
-    });
-    setTipsConfig({
-      enabled: flow?.tipsEnabled ?? false,
-      percentages: flow?.tipsPercentage ?? [],
-    });
-  }, []);
+  const syncFlowFromOrder = useCallback(
+    (orderData: TableOrderDetails | null) => {
+      const flow = orderData?.restaurant.flowConfig;
+      setFlowConfig({
+        orderingEnabled: flow?.orderingEnabled ?? true,
+        paymentEnabled: flow?.paymentEnabled ?? true,
+        requirePaymentBeforeOrder: flow?.requirePaymentBeforeOrder ?? false,
+      });
+      setTipsConfig({
+        enabled: flow?.tipsEnabled ?? false,
+        percentages: flow?.tipsPercentage ?? [],
+      });
+    },
+    [],
+  );
 
   const fetchSubmittedOrdersForSession = useCallback(
     async (sessionKey: string) => {
@@ -74,7 +81,8 @@ export default function TableOrderPage() {
             (order, index, self) =>
               order &&
               order.id &&
-              self.findIndex((o: SubmittedOrder) => o.id === order.id) === index,
+              self.findIndex((o: SubmittedOrder) => o.id === order.id) ===
+                index,
           );
 
           sessionOrders.sort((a, b) => {
@@ -127,7 +135,12 @@ export default function TableOrderPage() {
       setSubmittedOrders([]);
       return null;
     }
-  }, [fetchSubmittedOrdersForSession, restaurantName, syncFlowFromOrder, tableNumber]);
+  }, [
+    fetchSubmittedOrdersForSession,
+    restaurantName,
+    syncFlowFromOrder,
+    tableNumber,
+  ]);
 
   const fetchMenuItems = useCallback(async () => {
     try {
@@ -224,8 +237,8 @@ export default function TableOrderPage() {
   const lockMessage = !isOrderingEnabled
     ? "Ordering is currently disabled for this restaurant."
     : !isEditableOrder
-      ? "Order submitted"
-      : undefined;
+    ? "Order submitted"
+    : undefined;
 
   const handleAddItem = async (menuItemId: string, addonIds: string[] = []) => {
     if (!flowConfig.orderingEnabled) {
@@ -389,7 +402,7 @@ export default function TableOrderPage() {
     () =>
       new Map(
         order?.items.map((item) => [item.menuItemId, item as TableOrderItem]) ??
-        [],
+          [],
       ),
     [order],
   );
@@ -555,9 +568,13 @@ export default function TableOrderPage() {
             );
 
             if (response.ok) {
-              await hydrateOrderAndSession();
               toast.success("Payment completed successfully.");
             } else {
+              const errorData = await response.json().catch(() => null);
+              console.error(
+                "[LAHZA_ERROR] Failed to update payment:",
+                errorData,
+              );
               toast.error("Payment completed but failed to sync order.");
             }
           } catch (error) {
@@ -640,10 +657,11 @@ export default function TableOrderPage() {
                 key={id}
                 type="button"
                 onClick={() => setActiveView(id as ActiveView)}
-                className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeView === id
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-muted-foreground"
-                  }`}
+                className={`flex-1 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                  activeView === id
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "text-muted-foreground"
+                }`}
               >
                 {label}
               </button>

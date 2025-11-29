@@ -33,7 +33,16 @@ function initWebSocketServer(server) {
 }
 
 function broadcastOrderUpdate(order) {
-  if (!wss || !order) return;
+  if (!wss || !order) {
+    console.warn(
+      "[WS_BROADCAST_ERROR] WebSocket server not ready or order is null",
+      {
+        wssExists: !!wss,
+        orderExists: !!order,
+      },
+    );
+    return;
+  }
 
   const message = JSON.stringify({
     type: "order:update",
@@ -41,8 +50,10 @@ function broadcastOrderUpdate(order) {
   });
 
   wss.clients.forEach((client) => {
+    clientCount++;
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
+      successCount++;
     }
   });
 }

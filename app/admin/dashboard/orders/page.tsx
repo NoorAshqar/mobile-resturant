@@ -18,7 +18,11 @@ import { colors } from "@/config/colors";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
-const WS_BASE_URL = API_BASE_URL.replace(/^http/i, "ws");
+const WS_BASE_URL = (() => {
+  const url = API_BASE_URL.replace(/^https?:\/\//i, "");
+  const protocol = API_BASE_URL.startsWith("https") ? "wss" : "ws";
+  return `${protocol}://${url}`;
+})();
 
 type OrderStatus = "building" | "submitted" | "completed" | "cancelled";
 type PaymentStatus = "unpaid" | "pending" | "paid" | "failed";
@@ -42,6 +46,8 @@ interface Order {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+  paid?: boolean;
+  paidAt?: string | null;
   payment?: {
     method: string | null;
     status: PaymentStatus;
@@ -56,9 +62,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [liveConnected, setLiveConnected] = useState(false);
-  const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(
-    new Set(),
-  );
+  const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
   const statusFilters = useMemo(
     () => [
@@ -70,7 +74,12 @@ export default function OrdersPage() {
     ],
     [],
   );
-  const statusOptions: OrderStatus[] = ["submitted", "completed", "cancelled", "building"];
+  const statusOptions: OrderStatus[] = [
+    "submitted",
+    "completed",
+    "cancelled",
+    "building",
+  ];
 
   const setOrderUpdating = (orderId: string, isUpdating: boolean) => {
     setUpdatingOrders((prev) => {
@@ -88,10 +97,15 @@ export default function OrdersPage() {
     if (!incoming?.id) return;
 
     setOrders((previous) => {
-      const existingIndex = previous.findIndex((order) => order.id === incoming.id);
+      const existingIndex = previous.findIndex(
+        (order) => order.id === incoming.id,
+      );
       const nextOrders = [...previous];
       if (existingIndex >= 0) {
-        nextOrders[existingIndex] = { ...nextOrders[existingIndex], ...incoming };
+        nextOrders[existingIndex] = {
+          ...nextOrders[existingIndex],
+          ...incoming,
+        };
       } else {
         nextOrders.unshift(incoming);
       }
@@ -108,12 +122,19 @@ export default function OrdersPage() {
       if (wsRef.current) {
         wsRef.current.close();
       }
-      const socket = new WebSocket(`${WS_BASE_URL}/ws/orders`);
+      const wsUrl = `${WS_BASE_URL}/ws/orders`;
+      const socket = new WebSocket(wsUrl);
       wsRef.current = socket;
 
-      socket.onopen = () => setLiveConnected(true);
-      socket.onclose = () => setLiveConnected(false);
-      socket.onerror = () => setLiveConnected(false);
+      socket.onopen = () => {
+        setLiveConnected(true);
+      };
+      socket.onclose = () => {
+        setLiveConnected(false);
+      };
+      socket.onerror = (error) => {
+        setLiveConnected(false);
+      };
       socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
@@ -194,8 +215,15 @@ export default function OrdersPage() {
     };
   }, []);
 
+  const visibleOrders = useMemo(() => {
+    return orders.filter(
+      (order) =>
+        order.status !== "building" || order.payment?.status === "paid",
+    );
+  }, [orders]);
+
   useEffect(() => {
-    let filtered = orders;
+    let filtered = visibleOrders;
 
     // Filter by status
     if (statusFilter !== "all") {
@@ -214,7 +242,7 @@ export default function OrdersPage() {
     }
 
     setFilteredOrders(filtered);
-  }, [searchQuery, statusFilter, orders]);
+  }, [searchQuery, statusFilter, visibleOrders]);
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -291,7 +319,11 @@ export default function OrdersPage() {
           <p className="text-sm mt-1">View and manage all restaurant orders</p>
         </div>
         <Badge
-          className={`px-3 py-1 text-xs font-semibold ${liveConnected ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-800"}`}
+          className={`px-3 py-1 text-xs font-semibold ${
+            liveConnected
+              ? "bg-emerald-100 text-emerald-800"
+              : "bg-slate-200 text-slate-800"
+          }`}
         >
           {liveConnected ? "Live updates" : "Live feed offline"}
         </Badge>
@@ -357,7 +389,9 @@ export default function OrdersPage() {
                 key={filter.id}
                 variant="outline"
                 onClick={() => setStatusFilter(filter.id)}
-                className={`border-2 ${statusFilter === filter.id ? "shadow-md" : ""}`}
+                className={`border-2 ${
+                  statusFilter === filter.id ? "shadow-md" : ""
+                }`}
               >
                 {filter.label}
               </Button>
@@ -377,7 +411,10 @@ export default function OrdersPage() {
               <div className="p-6">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                   <Badge
-                    style={{ backgroundColor: getStatusColor(order.status), color: "#fff" }}
+                    style={{
+                      backgroundColor: getStatusColor(order.status),
+                      color: "#fff",
+                    }}
                     className="font-semibold"
                   >
                     {getStatusLabel(order.status)}

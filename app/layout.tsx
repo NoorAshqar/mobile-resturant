@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { HeaderWrapper } from "@/components/header-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSettingsProvider } from "@/components/theme/theme-settings-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           <ThemeSettingsProvider>
             <HeaderWrapper />
             {children}
+            <Toaster position="top-center" richColors />
           </ThemeSettingsProvider>
         </ThemeProvider>
       </body>

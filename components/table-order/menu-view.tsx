@@ -3,8 +3,8 @@
 import { Lock, Search, Sparkles } from "lucide-react";
 
 import { MenuItem, MenuItemType } from "@/components/menu-item";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface TableMenuViewProps {
   categories: string[];
@@ -37,7 +37,11 @@ export function TableMenuView({
   canEdit,
   lockMessage,
 }: TableMenuViewProps) {
-  const handleIncrement = (menuItemId: string, orderItemId?: string, quantity?: number) => {
+  const handleIncrement = (
+    menuItemId: string,
+    orderItemId?: string,
+    quantity?: number,
+  ) => {
     if (!orderItemId || quantity === undefined) {
       onAddMenuItem(menuItemId);
       return;
@@ -107,7 +111,8 @@ export function TableMenuView({
             Pro tip
           </div>
           <p className="mt-1 text-primary/90">
-            Tap a category or search for ingredients to build the perfect order. Your bill updates on the right instantly.
+            Tap a category or search for ingredients to build the perfect order.
+            Your bill updates on the right instantly.
           </p>
         </div>
 
@@ -126,8 +131,13 @@ export function TableMenuView({
 
         {filteredMenuItems.length === 0 ? (
           <div className="mt-10 rounded-3xl border border-dashed border-border bg-muted/40 px-6 py-12 text-center">
-            <p className="text-lg font-semibold text-foreground">No dishes match that vibe</p>
-            <p className="mt-2 text-sm text-muted-foreground">Try a different search or reset the filters to see everything on the menu.</p>
+            <p className="text-lg font-semibold text-foreground">
+              No dishes match that vibe
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Try a different search or reset the filters to see everything on
+              the menu.
+            </p>
             <Button
               variant="outline"
               className="mt-4 rounded-full border-border text-sm font-semibold"
@@ -140,7 +150,7 @@ export function TableMenuView({
             </Button>
           </div>
         ) : (
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="mt-8 grid gap-4">
             {filteredMenuItems.map((item) => {
               const existing = orderItemsByMenuId.get(item.id);
               return (
@@ -148,8 +158,12 @@ export function TableMenuView({
                   key={item.id}
                   item={item}
                   quantity={existing?.quantity ?? 0}
-                  onAdd={() => handleIncrement(item.id, existing?.id, existing?.quantity)}
-                  onRemove={() => handleDecrement(existing?.id, existing?.quantity)}
+                  onAdd={() =>
+                    handleIncrement(item.id, existing?.id, existing?.quantity)
+                  }
+                  onRemove={() =>
+                    handleDecrement(existing?.id, existing?.quantity)
+                  }
                   disabled={!canEdit}
                 />
               );

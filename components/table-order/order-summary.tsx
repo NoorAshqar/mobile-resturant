@@ -16,9 +16,9 @@ import { useState } from "react";
 import { ImageWithFallback } from "@/components/figma/image-with-fallback";
 import { MenuItemType } from "@/components/menu-item";
 import {
+  SubmittedOrder,
   TableOrderDetails,
   TableOrderPaymentStatus,
-  SubmittedOrder,
 } from "@/components/table-order/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -73,7 +73,8 @@ export function TableOrderSummary({
 }: TableOrderSummaryProps) {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [tipInput, setTipInput] = useState<string>("");
-  const { orderingEnabled, paymentEnabled, requirePaymentBeforeOrder } = flowConfig;
+  const { orderingEnabled, paymentEnabled, requirePaymentBeforeOrder } =
+    flowConfig;
 
   const toggleOrderExpanded = (orderId: string) => {
     setExpandedOrders((prev) => {
@@ -103,7 +104,8 @@ export function TableOrderSummary({
   const grandTotal = grandSubtotal;
 
   const numericTip = Number.parseFloat(tipInput);
-  const tipAmount = Number.isFinite(numericTip) && numericTip > 0 ? numericTip : 0;
+  const tipAmount =
+    Number.isFinite(numericTip) && numericTip > 0 ? numericTip : 0;
 
   const finalTotal = grandTotal + tipAmount;
   const hasBalance = grandTotal > 0;
@@ -177,8 +179,9 @@ export function TableOrderSummary({
               <p className="text-2xl font-semibold text-foreground">
                 {displayItems.length === 0
                   ? "No items yet"
-                  : `${displayItems.length} ${displayItems.length === 1 ? "item" : "items"
-                  }`}
+                  : `${displayItems.length} ${
+                      displayItems.length === 1 ? "item" : "items"
+                    }`}
               </p>
             </div>
             <div className="rounded-2xl bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
@@ -222,21 +225,21 @@ export function TableOrderSummary({
                 return (
                   <div
                     key={item.id}
-                    className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3"
+                    className="flex gap-3 rounded-2xl border bg-muted/50 p-3"
                   >
-                    {menuItem ? (
-                      <div className="h-14 w-14 overflow-hidden rounded-xl bg-white">
+                    <div className="h-14 w-14 overflow-hidden rounded-xl bg-background flex-shrink-0">
+                      {menuItem?.image ? (
                         <ImageWithFallback
                           src={menuItem.image}
                           alt={menuItem.name}
                           className="h-full w-full object-cover"
                         />
-                      </div>
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white">
-                        <ChefHat className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <ChefHat className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2">
@@ -250,7 +253,10 @@ export function TableOrderSummary({
                           {item.addons && item.addons.length > 0 && (
                             <div className="mt-1 space-y-0.5">
                               {item.addons.map((addon) => (
-                                <p key={addon.id} className="text-xs text-muted-foreground/80">
+                                <p
+                                  key={addon.id}
+                                  className="text-xs text-muted-foreground/80"
+                                >
                                   + {addon.name} (+${addon.price.toFixed(2)})
                                 </p>
                               ))}
@@ -375,8 +381,12 @@ export function TableOrderSummary({
                                 {item.addons && item.addons.length > 0 && (
                                   <div className="mt-1 space-y-0.5">
                                     {item.addons.map((addon) => (
-                                      <p key={addon.id} className="text-xs text-muted-foreground/80">
-                                        + {addon.name} (+${addon.price.toFixed(2)})
+                                      <p
+                                        key={addon.id}
+                                        className="text-xs text-muted-foreground/80"
+                                      >
+                                        + {addon.name} (+$
+                                        {addon.price.toFixed(2)})
                                       </p>
                                     ))}
                                   </div>
@@ -507,10 +517,12 @@ export function TableOrderSummary({
           )}
           {!paymentEnabled && (
             <div className="mt-6 space-y-3 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-4 text-sm text-muted-foreground">
-              <p className="text-sm font-semibold text-foreground">Payments disabled</p>
+              <p className="text-sm font-semibold text-foreground">
+                Payments disabled
+              </p>
               <p>
-                This restaurant is not accepting payments through the app right now.
-                Please settle your bill with the staff.
+                This restaurant is not accepting payments through the app right
+                now. Please settle your bill with the staff.
               </p>
             </div>
           )}
@@ -530,8 +542,8 @@ export function TableOrderSummary({
                 ? "Processing payment..."
                 : "Pay & send to kitchen"
               : canEdit
-                ? "Send order to kitchen"
-                : "Order sent"}
+              ? "Send order to kitchen"
+              : "Order sent"}
           </Button>
         </div>
       </div>
@@ -549,13 +561,13 @@ export function TableOrderSummary({
                 ? "Processing payment..."
                 : "Pay & send to kitchen"
               : canEdit
-                ? "Send order to kitchen"
-                : "Order sent"}
+              ? "Send order to kitchen"
+              : "Order sent"}
           </Button>
         </Card>
 
-        <Card className="mt-4 rounded-3xl border-0 bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white shadow-xl">
-          <p className="text-sm font-semibold text-white/80">
+        <Card className="mt-4 rounded-3xl border-0 bg-gradient-to-r from-primary/90 to-primary p-5 text-primary-foreground shadow-xl">
+          <p className="text-sm font-semibold text-primary-foreground/80">
             Need anything else?
           </p>
           <p className="mt-2 text-base">
@@ -564,7 +576,7 @@ export function TableOrderSummary({
           </p>
           <Button
             variant="secondary"
-            className="mt-4 w-full rounded-full bg-white/15 text-sm font-semibold text-black dark:text-white hover:bg-white/25"
+            className="mt-4 w-full rounded-full bg-primary-foreground/15 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/25"
             onClick={onResumeOrdering}
           >
             Keep browsing

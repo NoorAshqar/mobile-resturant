@@ -35,7 +35,7 @@ export default function AdminSignupPage() {
                 Already have an account?
                 <Link
                   href="/admin"
-                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all align-middle ml-2"
+                  className="font-semibold inline-flex items-center gap-1 hover:underline transition-all align-middle ml-2 cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4 align-middle" />
                   Sign in instead

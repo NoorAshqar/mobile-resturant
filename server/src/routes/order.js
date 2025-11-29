@@ -143,6 +143,8 @@ function formatAdminOrderSummary(order) {
     status: safeOrder.status,
     createdAt: safeOrder.createdAt,
     updatedAt: safeOrder.updatedAt,
+    paid: safeOrder.paid ?? false,
+    paidAt: safeOrder.paidAt ?? null,
     payment: {
       method: safeOrder.paymentMethod ?? null,
       status: safeOrder.paymentStatus ?? "unpaid",
@@ -218,14 +220,15 @@ router.patch("/admin/:orderId/status", authMiddleware, async (req, res) => {
     await order.save();
 
     const formatted = formatAdminOrderSummary(order);
-    broadcastOrderUpdate({ ...formatted, restaurantId: restaurant._id.toString() });
+    broadcastOrderUpdate({
+      ...formatted,
+      restaurantId: restaurant._id.toString(),
+    });
 
     return res.json({ order: formatted });
   } catch (error) {
     console.error("[ORDER_ADMIN_STATUS_ERROR]", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to update order status." });
+    return res.status(500).json({ message: "Failed to update order status." });
   }
 });
 
@@ -596,7 +599,10 @@ router.post("/:restaurantName/:tableNumber/items", async (req, res) => {
 
     // Check if item already exists in order with same addons
     // For simplicity, we'll add as a new item if addons differ
-    const addonIdsString = selectedAddons.map((a) => a._id.toString()).sort().join(",");
+    const addonIdsString = selectedAddons
+      .map((a) => a._id.toString())
+      .sort()
+      .join(",");
     const existingItemIndex = order.items.findIndex((item) => {
       const itemAddonIds = (item.addons || [])
         .map((a) => a.addon?.toString() || a._id?.toString())
@@ -798,19 +804,19 @@ router.delete(
         (item) => item._id.toString() !== itemId,
       );
 
-    calculateTotals(order);
-    await order.save();
+      calculateTotals(order);
+      await order.save();
 
-    broadcastOrderUpdate({
-      ...formatAdminOrderSummary(order),
-      restaurantId: restaurant._id.toString(),
-    });
+      broadcastOrderUpdate({
+        ...formatAdminOrderSummary(order),
+        restaurantId: restaurant._id.toString(),
+      });
 
-    return res.json({
-      order: formatOrderResponse(order, restaurant, table),
-    });
-  } catch (error) {
-    console.error("[ORDER_REMOVE_ITEM_ERROR]", error);
+      return res.json({
+        order: formatOrderResponse(order, restaurant, table),
+      });
+    } catch (error) {
+      console.error("[ORDER_REMOVE_ITEM_ERROR]", error);
       return res
         .status(500)
         .json({ message: "Failed to remove item from order." });
@@ -940,17 +946,17 @@ router.patch("/:restaurantName/:tableNumber/payment", async (req, res) => {
 
     const sessionKey = recentOrder.sessionKey;
 
-    // Find all unpaid orders in this session
+    // Find all unpaid orders in this session that have items (don't update empty orders)
     const ordersToUpdate = await Order.find({
       restaurant: restaurant._id,
       table: table._id,
       sessionKey: sessionKey,
       paid: false,
+      "items.0": { $exists: true }, // Only orders with at least one item
     });
 
     if (ordersToUpdate.length === 0) {
-      // Should not happen if recentOrder is found and unpaid, but handle gracefully
-      // If recentOrder is already paid, we might just be updating metadata
+      // If no orders with items found, update the recent order if it's unpaid
       if (!recentOrder.paid) {
         ordersToUpdate.push(recentOrder);
       }
@@ -968,7 +974,8 @@ router.patch("/:restaurantName/:tableNumber/payment", async (req, res) => {
           order.paidAt = new Date();
           if (order.status === EDITABLE_STATUS) {
             ensureSessionKey(order);
-            calculateTotals(order);
+            // Don't recalculate totals - they were already set when order was created
+            // Only update status if it's still in editable state
             order.status = SUBMITTED_STATUS;
             order.submittedAt = new Date();
           }
@@ -989,18 +996,30 @@ router.patch("/:restaurantName/:tableNumber/payment", async (req, res) => {
       return order.save();
     });
 
-    await Promise.all(updatePromises);
+    const updatedOrders = await Promise.all(updatePromises);
 
-    // Return the most recent order (updated)
-    const finalOrder = await Order.findById(recentOrder._id);
+    // Broadcast updates for ALL updated orders
+    updatedOrders.forEach((updatedOrder) => {
+      if (updatedOrder) {
+        const adminSummary = formatAdminOrderSummary(updatedOrder);
 
-    broadcastOrderUpdate({
-      ...formatAdminOrderSummary(finalOrder),
-      restaurantId: restaurant._id.toString(),
+        broadcastOrderUpdate({
+          ...adminSummary,
+          restaurantId: restaurant._id.toString(),
+        });
+      }
     });
 
+    // Return the most recent order (updated)
+    const finalOrder =
+      updatedOrders[0] || (await Order.findById(recentOrder._id));
+
+    const responseOrder = finalOrder
+      ? formatOrderResponse(finalOrder, restaurant, table)
+      : null;
+
     return res.json({
-      order: formatOrderResponse(finalOrder, restaurant, table),
+      order: responseOrder,
     });
   } catch (error) {
     console.error("[ORDER_PAYMENT_UPDATE_ERROR]", error);

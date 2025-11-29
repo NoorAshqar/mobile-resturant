@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
-import { Toaster } from "@/components/ui/sonner";
 
 export default async function AdminDashboardLayout({
   children,
@@ -40,7 +39,6 @@ export default async function AdminDashboardLayout({
           <main className="flex-1 overflow-y-auto">{children}</main>
         </div>
       </div>
-      <Toaster position="top-center" richColors />
     </>
   );
 }
